@@ -54,11 +54,34 @@ function Loading() {
   );
 }
 
+function AuthBootstrapping() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-4">
+        <SkeletonBlock className="mx-auto h-12 w-12 rounded-2xl" />
+        <SkeletonBlock className="mx-auto h-6 w-40" />
+        <SkeletonBlock className="h-24 w-full" />
+      </div>
+    </div>
+  );
+}
+
 function RequireAuth() {
-  const { isAuthenticated, state } = useData();
+  const { isAuthenticated, authReady, state } = useData();
+  if (!authReady) return <AuthBootstrapping />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!state.profile?.onboardingCompleted) {
     return <Navigate to="/onboarding" replace />;
+  }
+  return <Outlet />;
+}
+
+function RequireLogin() {
+  const { isAuthenticated, authReady, state } = useData();
+  if (!authReady) return <AuthBootstrapping />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (state.profile?.onboardingCompleted) {
+    return <Navigate to="/today" replace />;
   }
   return <Outlet />;
 }
@@ -71,7 +94,10 @@ function SubjectDetailRoute() {
 
 export const appRoutes = [
   { path: "/login", element: <LoginPage /> },
-  { path: "/onboarding", element: <OnboardingPage /> },
+  {
+    element: <RequireLogin />,
+    children: [{ path: "/onboarding", element: <OnboardingPage /> }],
+  },
   {
     element: <RequireAuth />,
     children: [

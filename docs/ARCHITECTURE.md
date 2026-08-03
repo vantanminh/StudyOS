@@ -15,10 +15,11 @@ Personal study operating system for grade-12 exam prep and IELTS.
 ```bash
 bun install
 cp .env.example .env
+# Fill VITE_FIREBASE_* then keep VITE_DEMO_MODE=false
 bun run dev
 ```
 
-Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, and set up your workspace.
+**Login is required.** Guest / anonymous use is disabled. Set `VITE_DEMO_MODE=true` only for offline local UI work.
 
 ## Scripts
 
@@ -39,17 +40,19 @@ Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, 
 
 - Frontend may read/write simple Firestore CRUD; complex logic (AI, aggregation, review scheduling, signed uploads) goes through Cloud Functions.
 - All Firestore queries must use `limit` + pagination — see `firebase/firestore.indexes.json`.
-- Security rules live in `firebase/firestore.rules` (`users/{uid}/...` owner-only).
+- Security rules live in `firebase/firestore.rules` (`users/{uid}/...` owner-only; anonymous auth denied).
+- App routes require a signed-in non-anonymous user; `/onboarding` is also auth-gated.
 - Scoring utilities: priority, mastery, readiness, review intervals — `src/lib/scoring`.
 
 ## Firebase setup
 
 1. Create a Firebase project (Blaze for Functions).
 2. Fill `VITE_FIREBASE_*` in `.env`.
-3. Set `VITE_DEMO_MODE=false`.
+3. Keep `VITE_DEMO_MODE=false` (required for production — no guest access).
 4. Enable **Email/Password** and **Google** sign-in (Console → Authentication → Sign-in method), or deploy auth config: `bunx firebase-tools deploy --only auth`.
+   Anonymous auth must stay **disabled**.
 5. Add every host domain (e.g. `localhost`, production host) under Authentication → Settings → **Authorized domains**.
-6. Deploy rules/indexes: `bunx firebase-tools deploy --only firestore`.
+6. Deploy rules/indexes: `bunx firebase-tools deploy --only firestore,storage`.
 7. Optional emulator: `VITE_USE_FIREBASE_EMULATOR=true` + `bun run emulators`.
 8. Cloud Functions (`functions/`): `cd functions && bun install && bun run build`.
 
