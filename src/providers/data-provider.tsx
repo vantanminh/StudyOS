@@ -19,10 +19,10 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   clearDemoState,
+  createEmptyState,
   createId,
-  createSeedState,
+  createInitialState,
   ensureDemoState,
-  loadDemoState,
   nowIso,
   saveDemoState,
   today,
@@ -49,23 +49,6 @@ const listeners = new Set<Listener>();
 let memoryState: DemoState | null = null;
 let firebaseUid: string | null = null;
 let firebaseWriteQueue = Promise.resolve();
-
-function createEmptyState(): DemoState {
-  return {
-    profile: null,
-    programs: [],
-    subjects: [],
-    topics: [],
-    tasks: [],
-    sessions: [],
-    errorLogs: [],
-    reviewItems: [],
-    exams: [],
-    examAttempts: [],
-    dailyStats: [],
-    syncStatus: "pending",
-  };
-}
 
 function getState(): DemoState {
   if (!memoryState) {
@@ -104,18 +87,11 @@ async function loadFirebaseState(user: User): Promise<DemoState> {
     };
   }
 
-  const seeded = createSeedState(user.displayName || "Học sinh");
-  const state: DemoState = {
-    ...seeded,
-    profile: seeded.profile
-      ? {
-          ...seeded.profile,
-          uid: user.uid,
-          email: user.email ?? "",
-          photoURL: user.photoURL ?? undefined,
-        }
-      : null,
-  };
+  const state = createInitialState(user.displayName || "Học sinh", {
+    uid: user.uid,
+    email: user.email ?? "",
+    photoURL: user.photoURL ?? undefined,
+  });
   await setDoc(stateRef, JSON.parse(JSON.stringify(state)));
   return state;
 }
@@ -215,9 +191,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const loginDemo = useCallback((name = "Minh") => {
-    const seeded = createSeedState(name);
-    setState(seeded);
+  const loginDemo = useCallback((name = "Học sinh") => {
+    // Empty workspace; onboarding collects programs/subjects from the user.
+    setState(createInitialState(name.trim() || "Học sinh"));
     refresh();
   }, [refresh]);
 
@@ -240,10 +216,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
     clearDemoState();
-    memoryState = {
-      ...createSeedState(),
-      profile: null,
-    };
+    memoryState = createEmptyState();
     saveDemoState(memoryState);
     listeners.forEach((l) => l());
     refresh();
@@ -276,10 +249,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         createdAt: ts,
         updatedAt: ts,
       }));
+      const existing = getState().profile;
       const profile: UserProfile = {
-        uid: "demo-user",
-        email: "ban@studyos.local",
+        uid: existing?.uid ?? firebaseUid ?? "demo-user",
+        email: existing?.email ?? "ban@studyos.local",
         displayName: profileInput.displayName,
+        photoURL: existing?.photoURL,
         timezone: profileInput.timezone,
         locale: profileInput.locale,
         onboardingCompleted: true,
@@ -288,9 +263,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         dailyStudyWindowEnd: profileInput.dailyStudyWindowEnd,
         defaultSessionMinutes: profileInput.defaultSessionMinutes,
         breakMinutes: profileInput.breakMinutes,
-        restDays: [0],
-        aiEnabled: false,
-        createdAt: ts,
+        restDays: existing?.restDays ?? [0],
+        aiEnabled: existing?.aiEnabled ?? false,
+        createdAt: existing?.createdAt ?? ts,
         updatedAt: ts,
       };
       setState({
@@ -801,8 +776,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const resetDemo = useCallback(() => {
-    const seeded = createSeedState(getState().profile?.displayName ?? "Minh");
-    setState(seeded);
+    const name = getState().profile?.displayName ?? "Học sinh";
+    const current = getState().profile;
+    setState(
+      createInitialState(name, {
+        uid: current?.uid,
+        email: current?.email,
+        photoURL: current?.photoURL,
+      }),
+    );
     refresh();
   }, [refresh]);
 
@@ -875,7 +857,4 @@ export function useData() {
   return ctx;
 }
 
-// Ensure seed exists on first import in browser
-if (typeof window !== "undefined" && !loadDemoState()) {
-  // leave empty until login — no auto seed without profile
-}
+// No auto-seed on import — user starts empty until login/onboarding.

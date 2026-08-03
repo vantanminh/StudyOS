@@ -10,8 +10,8 @@ import { BookOpen, Sparkles } from "lucide-react";
 export function LoginPage() {
   const { loginDemo, loginFirebase, isAuthenticated, state } = useData();
   const navigate = useNavigate();
-  const [name, setName] = useState("Minh");
-  const [email, setEmail] = useState("ban@studyos.local");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [register, setRegister] = useState(false);
   const [error, setError] = useState("");
@@ -26,8 +26,8 @@ export function LoginPage() {
   }, [isAuthenticated, state.profile?.onboardingCompleted, navigate]);
 
   function handleDemoLogin() {
-    loginDemo(name.trim() || "Minh");
-    navigate("/today");
+    loginDemo(name.trim() || "Học sinh");
+    // Navigation handled by useEffect (onboarding if first time).
   }
 
   async function handleFirebaseLogin() {
@@ -114,8 +114,10 @@ export function LoginPage() {
           {error && <p className="text-center text-sm text-destructive">{error}</p>}
 
           <p className="text-center text-xs text-muted-foreground">
-            Chế độ demo lưu dữ liệu trên thiết bị. Kết nối Firebase Auth (Google / Email)
-            khi sẵn sàng production.
+            Không có dữ liệu mẫu — bạn tự thêm môn, nhiệm vụ và lịch học.
+            {isDemoMode
+              ? " Chế độ local lưu trên thiết bị này."
+              : " Tài khoản Firebase đồng bộ lên cloud."}
           </p>
         </div>
       </div>

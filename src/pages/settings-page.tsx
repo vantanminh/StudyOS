@@ -114,8 +114,14 @@ export function SettingsPage() {
             >
               Export JSON
             </Button>
-            <Button variant="secondary" onClick={() => { resetDemo(); toast.message("Đã reset demo data"); }}>
-              Reset demo
+            <Button
+              variant="secondary"
+              onClick={() => {
+                resetDemo();
+                toast.message("Đã xóa dữ liệu — thiết lập lại từ đầu");
+              }}
+            >
+              Xóa dữ liệu & bắt đầu lại
             </Button>
             <Button variant="destructive" onClick={() => logout()}>
               Đăng xuất

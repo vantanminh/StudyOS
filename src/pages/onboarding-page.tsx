@@ -21,29 +21,43 @@ export function OnboardingPage() {
   const [sessionMinutes, setSessionMinutes] = useState(45);
   const [breakMinutes, setBreakMinutes] = useState(10);
 
-  const [exams, setExams] = useState([
+  type ExamDraft = {
+    name: string;
+    type: ProgramType;
+    priority: Priority;
+    targetDate: string;
+    targetBand?: number;
+  };
+
+  const EXAM_TEMPLATES: ExamDraft[] = [
     {
       name: "Kỳ thi tốt nghiệp THPT",
-      type: "grade_12" as ProgramType,
-      priority: "critical" as Priority,
+      type: "grade_12",
+      priority: "critical",
       targetDate: "",
     },
     {
       name: "IELTS",
-      type: "ielts" as ProgramType,
-      priority: "high" as Priority,
+      type: "ielts",
+      priority: "high",
       targetBand: 6.5,
       targetDate: "",
     },
-  ]);
+  ];
 
-  const [subjects, setSubjects] = useState<string[]>([
-    "Toán",
-    "Vật lý",
-    "IELTS Reading",
-    "IELTS Writing",
-  ]);
+  // Empty by default — user opts in to programs/subjects.
+  const [exams, setExams] = useState<ExamDraft[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [customSubject, setCustomSubject] = useState("");
+  const [customExamName, setCustomExamName] = useState("");
+
+  function toggleExamTemplate(template: ExamDraft) {
+    setExams((prev) => {
+      const exists = prev.some((e) => e.name === template.name);
+      if (exists) return prev.filter((e) => e.name !== template.name);
+      return [...prev, { ...template }];
+    });
+  }
 
   function toggleSubject(name: string) {
     setSubjects((prev) =>
@@ -157,9 +171,73 @@ export function OnboardingPage() {
             <CardTitle>Kỳ thi mục tiêu</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Chọn kỳ thi bạn đang hướng tới (có thể bỏ trống và thêm sau).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {EXAM_TEMPLATES.map((template) => {
+                const active = exams.some((e) => e.name === template.name);
+                return (
+                  <button
+                    key={template.name}
+                    type="button"
+                    onClick={() => toggleExamTemplate(template)}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-sm font-semibold transition-all",
+                      active
+                        ? "bg-sage-soft text-ink-900 shadow-soft"
+                        : "bg-secondary text-muted-foreground hover:bg-cream-300",
+                    )}
+                  >
+                    {template.name}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Thêm kỳ thi tuỳ chỉnh"
+                value={customExamName}
+                onChange={(e) => setCustomExamName(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  const name = customExamName.trim();
+                  if (!name) return;
+                  if (exams.some((e) => e.name === name)) {
+                    setCustomExamName("");
+                    return;
+                  }
+                  setExams((prev) => [
+                    ...prev,
+                    {
+                      name,
+                      type: "custom" as ProgramType,
+                      priority: "medium",
+                      targetDate: "",
+                    },
+                  ]);
+                  setCustomExamName("");
+                }}
+              >
+                Thêm
+              </Button>
+            </div>
             {exams.map((exam, index) => (
               <div key={exam.name} className="rounded-xl border border-border/70 bg-cream-50 p-4">
-                <p className="font-semibold">{exam.name}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold">{exam.name}</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExams((prev) => prev.filter((_, i) => i !== index))}
+                  >
+                    Gỡ
+                  </Button>
+                </div>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Ngày thi</Label>
@@ -173,7 +251,7 @@ export function OnboardingPage() {
                       }}
                     />
                   </div>
-                  {"targetBand" in exam ? (
+                  {exam.targetBand != null ? (
                     <div className="space-y-2">
                       <Label>Mục tiêu band</Label>
                       <Input
@@ -193,7 +271,7 @@ export function OnboardingPage() {
                   ) : (
                     <div className="space-y-2">
                       <Label>Ưu tiên</Label>
-                      <Input value="Khẩn cấp" readOnly />
+                      <Input value={exam.priority === "critical" ? "Khẩn cấp" : "Trung bình"} readOnly />
                     </div>
                   )}
                 </div>
@@ -217,6 +295,9 @@ export function OnboardingPage() {
             <CardTitle>Môn học</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Chọn gợi ý hoặc thêm môn của bạn — mặc định không chọn sẵn.
+            </p>
             <div className="flex flex-wrap gap-2">
               {DEFAULT_SUBJECT_SUGGESTIONS.map((name) => {
                 const active = subjects.includes(name);
