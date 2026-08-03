@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/providers/data-provider";
-import { isDemoMode } from "@/lib/firebase";
+import { isDemoMode, hasFirebaseConfig } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,8 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function LoginPage() {
-  const { loginDemo, loginFirebase, loginWithGoogle, isAuthenticated, state } = useData();
+  const { loginDemo, loginFirebase, loginWithGoogle, isAuthenticated, authReady, state } =
+    useData();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -74,19 +75,21 @@ export function LoginPage() {
   const [busy, setBusy] = useState<"google" | "email" | "demo" | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!authReady || !isAuthenticated) return;
     if (state.profile?.onboardingCompleted) {
       navigate("/today", { replace: true });
     } else {
       navigate("/onboarding", { replace: true });
     }
-  }, [isAuthenticated, state.profile?.onboardingCompleted, navigate]);
+  }, [authReady, isAuthenticated, state.profile?.onboardingCompleted, navigate]);
 
   function handleDemoLogin() {
     setError("");
     setBusy("demo");
     try {
       loginDemo(name.trim() || "Học sinh");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể vào demo.");
     } finally {
       setBusy(null);
     }
@@ -94,6 +97,14 @@ export function LoginPage() {
 
   async function handleFirebaseLogin() {
     setError("");
+    if (!email.trim() || !password) {
+      setError("Vui lòng nhập email và mật khẩu để đăng nhập.");
+      return;
+    }
+    if (register && !name.trim()) {
+      setError("Vui lòng nhập tên hiển thị khi đăng ký.");
+      return;
+    }
     setBusy("email");
     try {
       await loginFirebase(email.trim(), password, name, register);
@@ -116,6 +127,14 @@ export function LoginPage() {
     }
   }
 
+  if (!authReady) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Đang tải" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="absolute inset-0 overflow-hidden" aria-hidden>
@@ -133,6 +152,11 @@ export function LoginPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Hệ điều hành học tập dịu dàng cho kỳ thi lớp 12 và IELTS.
           </p>
+          {!isDemoMode && (
+            <p className="mt-3 text-xs font-medium text-ink-700">
+              Bắt buộc đăng nhập — không hỗ trợ dùng khách.
+            </p>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -165,40 +189,48 @@ export function LoginPage() {
             </>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên hiển thị</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Tên của bạn"
-              disabled={busy !== null}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              disabled={busy !== null}
-            />
-          </div>
-
-          {!isDemoMode && (
+          {(isDemoMode || register) && (
             <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
+              <Label htmlFor="name">Tên hiển thị</Label>
               <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 6 ký tự"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tên của bạn"
                 disabled={busy !== null}
               />
             </div>
+          )}
+
+          {isDemoMode ? null : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  disabled={busy !== null}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Tối thiểu 6 ký tự"
+                  disabled={busy !== null}
+                  autoComplete={register ? "new-password" : "current-password"}
+                  required
+                />
+              </div>
+            </>
           )}
 
           <Button
@@ -213,7 +245,7 @@ export function LoginPage() {
               <Sparkles className="h-4 w-4" />
             )}
             {isDemoMode
-              ? "Vào không gian học tập"
+              ? "Vào không gian học tập (demo local)"
               : register
                 ? "Đăng ký bằng email"
                 : "Đăng nhập bằng email"}
@@ -230,13 +262,19 @@ export function LoginPage() {
             </button>
           )}
 
+          {!isDemoMode && !hasFirebaseConfig && (
+            <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-center text-xs text-destructive">
+              Chưa cấu hình Firebase (`VITE_FIREBASE_*`). Không thể đăng nhập cho đến khi thêm
+              cấu hình vào `.env`.
+            </p>
+          )}
+
           {error && <p className="text-center text-sm text-destructive">{error}</p>}
 
           <p className="text-center text-xs text-muted-foreground">
-            Không có dữ liệu mẫu — bạn tự thêm môn, nhiệm vụ và lịch học.
             {isDemoMode
-              ? " Chế độ local lưu trên thiết bị này."
-              : " Tài khoản Firebase đồng bộ lên cloud."}
+              ? "Chế độ demo local — chỉ dùng để phát triển, dữ liệu lưu trên thiết bị này."
+              : "Cần tài khoản Firebase (Google hoặc email/mật khẩu). Không có chế độ khách."}
           </p>
         </div>
       </div>

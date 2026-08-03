@@ -16,4 +16,7 @@ bunx wrangler login
 bun run deploy:worker
 ```
 
-Demo mode is enabled by default. See `docs/ARCHITECTURE.md` for schema, security, and deploy notes.
+Demo mode is **off** by default. Sign in with Google or email is required (no guest access).
+See `docs/ARCHITECTURE.md` for schema, security, and deploy notes.
+
+To try the UI offline without Firebase, set `VITE_DEMO_MODE=true` in `.env` (local only).
