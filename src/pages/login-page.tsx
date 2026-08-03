@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/providers/data-provider";
+import { isDemoMode } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,10 +8,13 @@ import { useEffect, useState } from "react";
 import { BookOpen, Sparkles } from "lucide-react";
 
 export function LoginPage() {
-  const { loginDemo, isAuthenticated, state } = useData();
+  const { loginDemo, loginFirebase, isAuthenticated, state } = useData();
   const navigate = useNavigate();
   const [name, setName] = useState("Minh");
   const [email, setEmail] = useState("ban@studyos.local");
+  const [password, setPassword] = useState("");
+  const [register, setRegister] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -24,6 +28,15 @@ export function LoginPage() {
   function handleDemoLogin() {
     loginDemo(name.trim() || "Minh");
     navigate("/today");
+  }
+
+  async function handleFirebaseLogin() {
+    setError("");
+    try {
+      await loginFirebase(email.trim(), password, name, register);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể đăng nhập Firebase.");
+    }
   }
 
   return (
@@ -66,10 +79,39 @@ export function LoginPage() {
             />
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleDemoLogin}>
+          {!isDemoMode && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Mật khẩu</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tối thiểu 6 ký tự"
+              />
+            </div>
+          )}
+
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={isDemoMode ? handleDemoLogin : handleFirebaseLogin}
+          >
             <Sparkles className="h-4 w-4" />
             Vào không gian học tập
           </Button>
+
+          {!isDemoMode && (
+            <button
+              type="button"
+              className="w-full text-center text-sm text-primary underline-offset-4 hover:underline"
+              onClick={() => setRegister((value) => !value)}
+            >
+              {register ? "Đã có tài khoản? Đăng nhập" : "Chưa có tài khoản? Đăng ký"}
+            </button>
+          )}
+
+          {error && <p className="text-center text-sm text-destructive">{error}</p>}
 
           <p className="text-center text-xs text-muted-foreground">
             Chế độ demo lưu dữ liệu trên thiết bị. Kết nối Firebase Auth (Google / Email)

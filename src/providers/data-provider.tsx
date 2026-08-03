@@ -2,11 +2,21 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile as updateAuthProfile,
+  type User,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   clearDemoState,
   createId,
@@ -30,24 +40,84 @@ import type {
 } from "@/types/domain";
 import type { CreateTaskInput, OnboardingProfileInput } from "@/schemas/domain";
 import { canTransitionTaskStatus, nextReviewIntervalDays } from "@/lib/scoring";
+import { getFirebaseAuth, getFirestoreDb, isDemoMode } from "@/lib/firebase";
 import { addDays } from "date-fns";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
 let memoryState: DemoState | null = null;
+let firebaseUid: string | null = null;
+let firebaseWriteQueue = Promise.resolve();
+
+function createEmptyState(): DemoState {
+  return {
+    profile: null,
+    programs: [],
+    subjects: [],
+    topics: [],
+    tasks: [],
+    sessions: [],
+    errorLogs: [],
+    reviewItems: [],
+    exams: [],
+    examAttempts: [],
+    dailyStats: [],
+    syncStatus: "pending",
+  };
+}
 
 function getState(): DemoState {
   if (!memoryState) {
-    memoryState = ensureDemoState();
+    memoryState = isDemoMode ? ensureDemoState() : createEmptyState();
   }
   return memoryState;
 }
 
 function setState(next: DemoState) {
   memoryState = { ...next, syncStatus: "synced" };
-  saveDemoState(memoryState);
+  if (isDemoMode) {
+    saveDemoState(memoryState);
+  } else if (firebaseUid) {
+    const uid = firebaseUid;
+    const snapshot = JSON.parse(JSON.stringify(memoryState)) as DemoState;
+    firebaseWriteQueue = firebaseWriteQueue
+      .catch(() => undefined)
+      .then(() => setDoc(doc(getFirestoreDb(), "users", uid), snapshot))
+      .catch(() => {
+        if (firebaseUid === uid && memoryState) {
+          memoryState = { ...memoryState, syncStatus: "failed" };
+          listeners.forEach((l) => l());
+        }
+      });
+  }
   listeners.forEach((l) => l());
+}
+
+async function loadFirebaseState(user: User): Promise<DemoState> {
+  const stateRef = doc(getFirestoreDb(), "users", user.uid);
+  const snapshot = await getDoc(stateRef);
+  if (snapshot.exists()) {
+    return {
+      ...(snapshot.data() as DemoState),
+      syncStatus: "synced",
+    };
+  }
+
+  const seeded = createSeedState(user.displayName || "Học sinh");
+  const state: DemoState = {
+    ...seeded,
+    profile: seeded.profile
+      ? {
+          ...seeded.profile,
+          uid: user.uid,
+          email: user.email ?? "",
+          photoURL: user.photoURL ?? undefined,
+        }
+      : null,
+  };
+  await setDoc(stateRef, JSON.parse(JSON.stringify(state)));
+  return state;
 }
 
 function subscribe(listener: Listener) {
@@ -63,6 +133,12 @@ interface DataContextValue {
   state: DemoState;
   isAuthenticated: boolean;
   loginDemo: (name?: string) => void;
+  loginFirebase: (
+    email: string,
+    password: string,
+    displayName: string,
+    register: boolean,
+  ) => Promise<void>;
   logout: () => void;
   completeOnboarding: (
     profile: OnboardingProfileInput,
@@ -117,13 +193,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [, bump] = useState(0);
   const refresh = useCallback(() => bump((n) => n + 1), []);
 
+  useEffect(() => {
+    if (isDemoMode) return;
+
+    const auth = getFirebaseAuth();
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        firebaseUid = null;
+        memoryState = createEmptyState();
+        listeners.forEach((listener) => listener());
+        return;
+      }
+
+      firebaseUid = user.uid;
+      try {
+        memoryState = await loadFirebaseState(user);
+      } catch {
+        memoryState = { ...createEmptyState(), syncStatus: "failed" };
+      }
+      listeners.forEach((listener) => listener());
+    });
+  }, []);
+
   const loginDemo = useCallback((name = "Minh") => {
     const seeded = createSeedState(name);
     setState(seeded);
     refresh();
   }, [refresh]);
 
+  const loginFirebase = useCallback(
+    async (email: string, password: string, displayName: string, register: boolean) => {
+      const auth = getFirebaseAuth();
+      const credential = register
+        ? await createUserWithEmailAndPassword(auth, email, password)
+        : await signInWithEmailAndPassword(auth, email, password);
+      if (register && displayName.trim()) {
+        await updateAuthProfile(credential.user, { displayName: displayName.trim() });
+      }
+    },
+    [],
+  );
+
   const logout = useCallback(() => {
+    if (!isDemoMode) {
+      void signOut(getFirebaseAuth());
+      return;
+    }
     clearDemoState();
     memoryState = {
       ...createSeedState(),
@@ -700,6 +815,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       state,
       isAuthenticated: Boolean(state.profile),
       loginDemo,
+      loginFirebase,
       logout,
       completeOnboarding,
       updateProfile,
@@ -725,6 +841,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [
       state,
       loginDemo,
+      loginFirebase,
       logout,
       completeOnboarding,
       updateProfile,
