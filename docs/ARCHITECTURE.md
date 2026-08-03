@@ -46,8 +46,10 @@ Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, 
 1. Create a Firebase project (Blaze for Functions).
 2. Fill `VITE_FIREBASE_*` in `.env`.
 3. Set `VITE_DEMO_MODE=false`.
-4. Deploy rules/indexes: `firebase deploy --only firestore`.
-5. Optional emulator: `VITE_USE_FIREBASE_EMULATOR=true` + `npm run emulators`.
+4. Enable **Email/Password** and **Google** sign-in (Console → Authentication → Sign-in method), or deploy auth config: `npx firebase-tools deploy --only auth`.
+5. Add every host domain (e.g. `localhost`, production host) under Authentication → Settings → **Authorized domains**.
+6. Deploy rules/indexes: `firebase deploy --only firestore`.
+7. Optional emulator: `VITE_USE_FIREBASE_EMULATOR=true` + `npm run emulators`.
 
 ## Cloudflare
 

@@ -1,4 +1,15 @@
 {
+  "auth": {
+    "authorizedDomains": ["localhost"],
+    "providers": {
+      "anonymous": false,
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "StudyOS",
+        "supportEmail": "support@studyos.local"
+      }
+    }
+  },
   "firestore": {
     "rules": "firebase/firestore.rules",
     "indexes": "firebase/firestore.indexes.json"

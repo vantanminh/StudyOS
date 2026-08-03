@@ -10,8 +10,10 @@ import {
 } from "react";
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile as updateAuthProfile,
   type User,
@@ -115,6 +117,7 @@ interface DataContextValue {
     displayName: string,
     register: boolean,
   ) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   completeOnboarding: (
     profile: OnboardingProfileInput,
@@ -209,6 +212,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const loginWithGoogle = useCallback(async () => {
+    const auth = getFirebaseAuth();
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithPopup(auth, provider);
+    // Profile / workspace load via onAuthStateChanged → loadFirebaseState.
+  }, []);
 
   const logout = useCallback(() => {
     if (!isDemoMode) {
@@ -798,6 +809,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(state.profile),
       loginDemo,
       loginFirebase,
+      loginWithGoogle,
       logout,
       completeOnboarding,
       updateProfile,
@@ -824,6 +836,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       state,
       loginDemo,
       loginFirebase,
+      loginWithGoogle,
       logout,
       completeOnboarding,
       updateProfile,
