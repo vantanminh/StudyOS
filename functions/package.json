@@ -2,10 +2,11 @@
   "name": "studyos-functions",
   "private": true,
   "main": "lib/index.js",
+  "packageManager": "bun@1.3.14",
   "engines": { "node": "20" },
   "scripts": {
     "build": "tsc",
-    "serve": "npm run build && firebase emulators:start --only functions",
+    "serve": "bun run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {

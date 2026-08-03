@@ -1,8 +1,6 @@
-name: StudyOS
-description: Soft study OS for grade 12 + IELTS
-
-# Install dependencies for the Vite app
-install: npm install
-
-# Optional: start Firebase emulators if configured
-# start: npm run emulators
+{
+  "name": "StudyOS",
+  "description": "Soft study OS for grade 12 + IELTS",
+  "install": "bun install",
+  "start": "bun run dev"
+}

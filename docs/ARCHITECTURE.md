@@ -6,29 +6,30 @@ Personal study operating system for grade-12 exam prep and IELTS.
 
 - **Frontend:** Vite + React + TypeScript + React Router + Tailwind CSS + shadcn/ui
 - **Data:** Firebase Auth / Firestore / Cloud Functions (demo mode uses local persistence)
-- **Deploy:** Cloudflare Workers Static Assets via Wrangler (`npm run deploy:worker`)
+- **Package manager:** [Bun](https://bun.sh) (`bun install` / `bun run`)
+- **Deploy:** Cloudflare Workers Static Assets via Wrangler (`bun run deploy:worker`)
 - **Files:** `StorageProvider` abstraction (Cloudflare R2 default, Firebase Storage optional)
 
 ## Quick start
 
 ```bash
-npm install
+bun install
 cp .env.example .env
-npm run dev
+bun run dev
 ```
 
-Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, and explore seeded data.
+Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, and set up your workspace.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `npm run dev` | Local Vite server |
-| `npm run build` | Typecheck + production build |
-| `npm run test` | Unit tests (scoring, schemas) |
-| `npm run typecheck` | TypeScript only |
-| `npm run deploy:worker` | Build + deploy the SPA to a Cloudflare Worker |
-| `npm run emulators` | Firebase Emulator Suite |
+| `bun run dev` | Local Vite server |
+| `bun run build` | Typecheck + production build |
+| `bun run test` | Unit tests (scoring, schemas) |
+| `bun run typecheck` | TypeScript only |
+| `bun run deploy:worker` | Build + deploy the SPA to a Cloudflare Worker |
+| `bun run emulators` | Firebase Emulator Suite |
 
 ## Routes
 
@@ -46,16 +47,17 @@ Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, 
 1. Create a Firebase project (Blaze for Functions).
 2. Fill `VITE_FIREBASE_*` in `.env`.
 3. Set `VITE_DEMO_MODE=false`.
-4. Enable **Email/Password** and **Google** sign-in (Console → Authentication → Sign-in method), or deploy auth config: `npx firebase-tools deploy --only auth`.
+4. Enable **Email/Password** and **Google** sign-in (Console → Authentication → Sign-in method), or deploy auth config: `bunx firebase-tools deploy --only auth`.
 5. Add every host domain (e.g. `localhost`, production host) under Authentication → Settings → **Authorized domains**.
-6. Deploy rules/indexes: `firebase deploy --only firestore`.
-7. Optional emulator: `VITE_USE_FIREBASE_EMULATOR=true` + `npm run emulators`.
+6. Deploy rules/indexes: `bunx firebase-tools deploy --only firestore`.
+7. Optional emulator: `VITE_USE_FIREBASE_EMULATOR=true` + `bun run emulators`.
+8. Cloud Functions (`functions/`): `cd functions && bun install && bun run build`.
 
 ## Cloudflare
 
 ```bash
-npx wrangler login
-npm run deploy:worker
+bunx wrangler login
+bun run deploy:worker
 ```
 
 ## MVP phases
