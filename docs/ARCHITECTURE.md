@@ -6,7 +6,7 @@ Personal study operating system for grade-12 exam prep and IELTS.
 
 - **Frontend:** Vite + React + TypeScript + React Router + Tailwind CSS + shadcn/ui
 - **Data:** Firebase Auth / Firestore / Cloud Functions (demo mode uses local persistence)
-- **Deploy:** Cloudflare Pages via Wrangler (`npm run deploy:cf`)
+- **Deploy:** Cloudflare Workers Static Assets via Wrangler (`npm run deploy:worker`)
 - **Files:** `StorageProvider` abstraction (Cloudflare R2 default, Firebase Storage optional)
 
 ## Quick start
@@ -27,7 +27,7 @@ Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, 
 | `npm run build` | Typecheck + production build |
 | `npm run test` | Unit tests (scoring, schemas) |
 | `npm run typecheck` | TypeScript only |
-| `npm run deploy:cf` | Build + Wrangler Pages deploy |
+| `npm run deploy:worker` | Build + deploy the SPA to a Cloudflare Worker |
 | `npm run emulators` | Firebase Emulator Suite |
 
 ## Routes
@@ -53,7 +53,7 @@ Demo mode is on by default (`VITE_DEMO_MODE=true`). Open the app, enter a name, 
 
 ```bash
 npx wrangler login
-npm run deploy:cf
+npm run deploy:worker
 ```
 
 ## MVP phases

@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
-    "deploy:cf": "npm run build && wrangler pages deploy dist",
+    "deploy:worker": "npm run build && wrangler deploy",
+    "deploy:cf": "npm run deploy:worker",
     "emulators": "firebase emulators:start"
   },
   "dependencies": {

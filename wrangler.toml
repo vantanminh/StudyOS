@@ -1,8 +1,7 @@
 name = "studyos"
 compatibility_date = "2026-08-01"
-pages_build_output_dir = "dist"
 
-# Cloudflare Pages deployment for StudyOS frontend.
-# Future: Workers for signed R2 uploads and AI proxy if migrating off Firebase Functions.
-# [vars]
-# ENVIRONMENT = "production"
+# Serve the Vite SPA as a Cloudflare Worker with Workers Static Assets.
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
