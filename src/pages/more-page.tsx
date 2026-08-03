@@ -9,6 +9,8 @@ import {
   FolderOpen,
   Settings,
 } from "lucide-react";
+import { useData } from "@/providers/data-provider";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const links = [
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
@@ -21,9 +23,23 @@ const links = [
 ];
 
 export function MorePage() {
+  const { state } = useData();
+  const profile = state.profile;
+
   return (
     <div>
       <PageHeader title="More" description="Các mục còn lại trên mobile." />
+
+      {profile ? (
+        <div className="mb-4 rounded-2xl border border-border/60 bg-card p-4 shadow-soft">
+          <p className="font-semibold text-ink-900">{profile.displayName}</p>
+          {profile.email ? (
+            <p className="mt-0.5 text-sm text-muted-foreground">{profile.email}</p>
+          ) : null}
+          <LogoutButton variant="destructive" className="mt-3 w-full" />
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3">
         {links.map((item) => (
           <Link

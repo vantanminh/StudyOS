@@ -118,7 +118,8 @@ interface DataContextValue {
     register: boolean,
   ) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  logout: () => void;
+  /** Sign out, flush pending cloud writes, and clear in-memory workspace. */
+  logout: () => Promise<void>;
   completeOnboarding: (
     profile: OnboardingProfileInput,
     exams: Array<Omit<Program, "id" | "createdAt" | "updatedAt" | "status">>,
@@ -221,14 +222,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Profile / workspace load via onAuthStateChanged → loadFirebaseState.
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     if (!isDemoMode) {
-      void signOut(getFirebaseAuth());
-      return;
+      // Persist any queued Firestore writes before dropping the session.
+      await firebaseWriteQueue.catch(() => undefined);
+      await signOut(getFirebaseAuth());
+    } else {
+      clearDemoState();
     }
-    clearDemoState();
+
+    firebaseUid = null;
+    firebaseWriteQueue = Promise.resolve();
     memoryState = createEmptyState();
-    saveDemoState(memoryState);
+    if (isDemoMode) {
+      // Keep storage empty until the next login.
+      clearDemoState();
+    }
     listeners.forEach((l) => l());
     refresh();
   }, [refresh]);

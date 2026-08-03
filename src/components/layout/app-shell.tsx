@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { Badge } from "@/components/ui/badge";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const desktopNav = [
   { to: "/today", label: "Today", icon: LayoutDashboard },
@@ -83,22 +84,29 @@ export function AppShell() {
           ))}
         </nav>
 
-        <div className="mt-4 rounded-2xl bg-peach-soft/60 p-4">
-          <p className="text-xs font-semibold text-ink-800">
-            {state.profile?.displayName ?? "Bạn"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Đồng bộ:{" "}
-            <Badge variant={state.syncStatus === "synced" ? "success" : "warn"}>
-              {state.syncStatus === "synced"
-                ? "Đã đồng bộ"
-                : state.syncStatus === "pending"
-                  ? "Đang chờ"
-                  : "Thất bại"}
-            </Badge>
-          </p>
+        <div className="mt-4 space-y-2 rounded-2xl bg-peach-soft/60 p-4">
+          <div>
+            <p className="text-xs font-semibold text-ink-800">
+              {state.profile?.displayName ?? "Bạn"}
+            </p>
+            {state.profile?.email ? (
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                {state.profile.email}
+              </p>
+            ) : null}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Đồng bộ:{" "}
+              <Badge variant={state.syncStatus === "synced" ? "success" : "warn"}>
+                {state.syncStatus === "synced"
+                  ? "Đã đồng bộ"
+                  : state.syncStatus === "pending"
+                    ? "Đang chờ"
+                    : "Thất bại"}
+              </Badge>
+            </p>
+          </div>
           <Button
-            className="mt-3 w-full"
+            className="w-full"
             size="sm"
             variant="secondary"
             onClick={() => setQuickAddOpen(true)}
@@ -106,6 +114,7 @@ export function AppShell() {
             <Plus className="h-4 w-4" />
             Quick Add
           </Button>
+          <LogoutButton variant="outline" size="sm" className="w-full" />
         </div>
       </aside>
 

@@ -73,16 +73,16 @@ export const appRoutes = [
   { path: "/login", element: <LoginPage /> },
   { path: "/onboarding", element: <OnboardingPage /> },
   {
-    path: "/session/:sessionId",
-    element: (
-      <Suspense fallback={<Loading />}>
-        <SessionPage />
-      </Suspense>
-    ),
-  },
-  {
     element: <RequireAuth />,
     children: [
+      {
+        path: "/session/:sessionId",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <SessionPage />
+          </Suspense>
+        ),
+      },
       {
         element: <AppShell />,
         children: [

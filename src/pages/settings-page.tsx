@@ -1,15 +1,17 @@
 import { useData } from "@/providers/data-provider";
 import { PageHeader } from "@/components/shared/page";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { isDemoMode } from "@/lib/firebase";
 
 export function SettingsPage() {
-  const { state, updateProfile, exportJson, resetDemo, logout } = useData();
+  const { state, updateProfile, exportJson, resetDemo } = useData();
   const profile = state.profile;
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [weeklyHours, setWeeklyHours] = useState(profile?.weeklyTargetHours ?? 20);
@@ -25,6 +27,26 @@ export function SettingsPage() {
       />
 
       <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Tài khoản</CardTitle>
+            <CardDescription>
+              {isDemoMode
+                ? "Chế độ local trên thiết bị này."
+                : "Phiên đăng nhập Firebase của bạn."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-xl border border-border/60 bg-cream-50/80 px-4 py-3 text-sm">
+              <p className="font-semibold text-ink-900">{profile.displayName}</p>
+              {profile.email ? (
+                <p className="mt-0.5 text-muted-foreground">{profile.email}</p>
+              ) : null}
+            </div>
+            <LogoutButton variant="destructive" className="w-full sm:w-auto" />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>
@@ -97,6 +119,7 @@ export function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Data</CardTitle>
+            <CardDescription>Xuất hoặc xóa dữ liệu workspace — không đăng xuất.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button
@@ -122,9 +145,6 @@ export function SettingsPage() {
               }}
             >
               Xóa dữ liệu & bắt đầu lại
-            </Button>
-            <Button variant="destructive" onClick={() => logout()}>
-              Đăng xuất
             </Button>
           </CardContent>
         </Card>
