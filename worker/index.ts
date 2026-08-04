@@ -5,7 +5,7 @@
  */
 
 import { AuthError } from "./auth";
-import { handleWeeklyPlan } from "./ai";
+import { handleParseTask, handleWeeklyPlan } from "./ai";
 import { errorJson, json, withCors } from "./cors";
 import {
   handleDeleteObject,
@@ -81,6 +81,10 @@ async function handleApi(
 
   if (url.pathname === "/api/ai/weekly-plan" && request.method === "POST") {
     return handleWeeklyPlan(request, env);
+  }
+
+  if (url.pathname === "/api/ai/parse-task" && request.method === "POST") {
+    return handleParseTask(request, env);
   }
 
   return errorJson(request, env, "Không tìm thấy API.", 404);

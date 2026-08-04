@@ -81,10 +81,13 @@ Authorization: Bearer <Firebase ID token>
 | GET | `/api/storage/objects?key=` | Download (owner only) |
 | DELETE | `/api/storage/objects?key=` | Delete (owner only) |
 | POST | `/api/ai/weekly-plan` | AI plan preview — model `openai/gpt-5.6-luna`, `reasoning.effort=high`, `service_tier=flex`, prompt cache (OpenRouter secret) |
+| POST | `/api/ai/parse-task` | NL quick-add preview — same model defaults; client must confirm before `createTask` |
 
 Implementation: `worker/index.ts`, `worker/storage.ts`, `worker/ai.ts`, `worker/auth.ts`.
 
 Frontend clients: `src/lib/api/worker-client.ts`, `src/lib/storage/provider.ts`.
+
+Automation (client-side, Phase 4): `src/lib/automation` — auto-overdue, smart reschedule preview/apply, in-app reminders (`dailyStudyWindow` / due tasks / reviews), auto-review from errors & weak topics (prefs). Hooked via `AutomationHost` + DataProvider `runAutomation`.
 
 ## Architecture notes
 
@@ -92,6 +95,8 @@ Frontend clients: `src/lib/api/worker-client.ts`, `src/lib/storage/provider.ts`.
 - Max upload size: **25MB**. Keys always `/{uid}/{folder}/{timestamp}-{fileName}`.
 - Anonymous Firebase users are rejected by the Worker (same policy as the app).
 - Scoring utilities: priority, mastery, readiness, review intervals — `src/lib/scoring`.
+- AI weekly plan / NL parse always return **preview**; user confirms in UI before tasks are written (`source: "ai"`).
+- `aiEnabled` on profile gates Planner “Lập kế hoạch tuần” and NL AI parse; Settings copy refers to **Cloudflare Worker**, not Cloud Functions.
 - `functions/` is **deprecated** (see `functions/README.md`).
 
 ## Firebase setup (Spark-friendly)
@@ -145,11 +150,11 @@ Worker runtime vars/secrets (dashboard or CLI), not Vite:
 
 ## MVP phases
 
-1. Foundation — auth, onboarding, subjects/topics/tasks, Today, Planner, settings ✅ (demo)
-2. Study tracking — timer, sessions, daily/weekly stats
-3. Exams / Error Log / Review / readiness
-4. Automation — notifications, smart reschedule
-5. AI — weekly plan, NL quick add (**Worker only**, not Functions)
+1. Foundation — auth, onboarding, subjects/topics/tasks, Today, Planner, settings ✅
+2. Study tracking — timer, sessions, daily/weekly stats ✅
+3. Exams / Error Log / Review / readiness ✅
+4. Automation — notifications (in-app), smart reschedule, auto-overdue, auto-review prefs ✅
+5. AI — weekly plan UI + confirm, NL quick add (**Worker only**, not Functions) ✅
 
 ## Design
 

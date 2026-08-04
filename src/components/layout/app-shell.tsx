@@ -21,6 +21,7 @@ import { useState } from "react";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { Badge } from "@/components/ui/badge";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { AutomationHost } from "@/components/automation/automation-host";
 
 const desktopNav = [
   { to: "/today", label: "Today", icon: LayoutDashboard },
@@ -133,6 +134,7 @@ export function AppShell() {
         </header>
 
         <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8">
+          <AutomationHost />
           <Outlet key={location.pathname} />
         </main>
       </div>

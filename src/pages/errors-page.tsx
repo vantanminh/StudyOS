@@ -33,6 +33,7 @@ export function ErrorsPage() {
   const [severity, setSeverity] = useState<Severity>("medium");
   const [subjectId, setSubjectId] = useState<string | undefined>();
   const [solution, setSolution] = useState("");
+  const autoReview = state.preferences?.autoReviewFromErrors ?? true;
 
   return (
     <div>
@@ -163,17 +164,26 @@ export function ErrorsPage() {
                   solution,
                   nextReviewAt: addDays(new Date(), 1).toISOString(),
                 });
-                createReviewItem({
-                  sourceType: "error",
-                  sourceId: error.id,
-                  subjectId,
-                  title: `Ôn lỗi: ${error.title}`,
-                  dueAt: addDays(new Date(), 1).toISOString(),
-                  intervalDays: 1,
-                  priority: severity === "critical" || severity === "high" ? "high" : "medium",
-                  status: "pending",
-                });
-                toast.success("Đã ghi lỗi và tạo review");
+                if (autoReview) {
+                  createReviewItem({
+                    sourceType: "error",
+                    sourceId: error.id,
+                    subjectId,
+                    title: `Ôn lỗi: ${error.title}`,
+                    dueAt: addDays(new Date(), 1).toISOString(),
+                    intervalDays: 1,
+                    priority:
+                      severity === "critical" || severity === "high"
+                        ? "high"
+                        : "medium",
+                    status: "pending",
+                  });
+                  toast.success("Đã ghi lỗi và tạo review");
+                } else {
+                  toast.success(
+                    "Đã ghi lỗi (auto-review tắt — bật trong Settings)",
+                  );
+                }
                 setOpen(false);
                 setTitle("");
                 setSolution("");

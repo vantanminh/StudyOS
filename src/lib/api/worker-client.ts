@@ -90,6 +90,13 @@ export interface WeeklyPlanRequest {
   notes?: string;
 }
 
+export interface WeeklyPlanTaskPreview {
+  title: string;
+  estimatedMinutes: number;
+  type?: string;
+  subject?: string;
+}
+
 export interface WeeklyPlanResponse {
   preview: boolean;
   uid?: string;
@@ -97,12 +104,7 @@ export interface WeeklyPlanResponse {
   targetHours?: number;
   days?: Array<{
     date: string;
-    tasks: Array<{
-      title: string;
-      estimatedMinutes: number;
-      type?: string;
-      subject?: string;
-    }>;
+    tasks: WeeklyPlanTaskPreview[];
   }>;
   summary?: string;
   message?: string;
@@ -113,12 +115,150 @@ export interface WeeklyPlanResponse {
   cache?: { cached_tokens?: number; hit?: boolean };
 }
 
-export function generateWeeklyPlan(
+export interface ParseTaskRequest {
+  text: string;
+  subjects?: string[];
+  today?: string;
+}
+
+export interface ParsedTaskPreview {
+  title: string;
+  estimatedMinutes: number;
+  type?: string;
+  subject?: string | null;
+  scheduledDate?: string | null;
+  scheduledStartAt?: string | null;
+  priority?: string;
+  notes?: string | null;
+}
+
+export interface ParseTaskResponse {
+  preview: boolean;
+  uid?: string;
+  task?: ParsedTaskPreview;
+  message?: string;
+  model?: string;
+}
+
+function demoHeuristicParse(
+  text: string,
+  subjects: string[],
+  today: string,
+): ParsedTaskPreview {
+  const lower = text.toLowerCase();
+  let type = "custom";
+  if (lower.includes("reading") || lower.includes("đọc")) type = "reading";
+  else if (lower.includes("writing") || lower.includes("viết")) type = "writing";
+  else if (lower.includes("listening") || lower.includes("nghe")) type = "listening";
+  else if (lower.includes("speaking") || lower.includes("nói")) type = "speaking";
+  else if (lower.includes("ôn") || lower.includes("review")) type = "review";
+  else if (lower.includes("luyện") || lower.includes("practice")) type = "practice";
+  else if (lower.includes("học")) type = "learn_theory";
+
+  const minutesMatch = text.match(/(\d+)\s*(phút|ph|min)/i);
+  const estimatedMinutes = minutesMatch
+    ? Math.min(180, Math.max(15, Number(minutesMatch[1])))
+    : 45;
+
+  let scheduledDate: string | null = today;
+  const base = new Date(`${today}T12:00:00`);
+  if (/mai|tomorrow/.test(lower)) {
+    base.setDate(base.getDate() + 1);
+    scheduledDate = base.toISOString().slice(0, 10);
+  } else if (/hôm nay|today/.test(lower)) {
+    scheduledDate = today;
+  }
+
+  let scheduledStartAt: string | null = null;
+  const timeMatch = text.match(/(\d{1,2})\s*[h:]\s*(\d{2})?/);
+  if (timeMatch && scheduledDate) {
+    const h = Number(timeMatch[1]);
+    const m = Number(timeMatch[2] ?? 0);
+    if (h >= 0 && h <= 23) {
+      scheduledStartAt = `${scheduledDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+    }
+  }
+
+  const subject = subjects.find((s) => lower.includes(s.toLowerCase())) ?? null;
+
+  return {
+    title: text.slice(0, 120).trim() || "Task mới",
+    estimatedMinutes,
+    type,
+    subject,
+    scheduledDate,
+    scheduledStartAt,
+    priority: /gấp|khẩn|urgent/.test(lower) ? "high" : "medium",
+    notes: null,
+  };
+}
+
+function demoWeeklyPlan(input: WeeklyPlanRequest): WeeklyPlanResponse {
+  const subjects = input.subjects?.length
+    ? input.subjects
+    : ["Toán", "Anh", "Lý"];
+  const start = new Date(`${input.weekStart}T12:00:00`);
+  const minutesPerDay = Math.round((input.targetHours * 60) / 5);
+  const days = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const date = d.toISOString().slice(0, 10);
+    const subject = subjects[i % subjects.length]!;
+    return {
+      date,
+      tasks: [
+        {
+          title: `Ôn ${subject} · buổi ${i + 1}`,
+          estimatedMinutes: Math.min(120, Math.max(30, Math.round(minutesPerDay * 0.6))),
+          type: "practice",
+          subject,
+        },
+        {
+          title: `Review nhanh ${subject}`,
+          estimatedMinutes: Math.min(60, Math.max(20, Math.round(minutesPerDay * 0.4))),
+          type: "review",
+          subject,
+        },
+      ],
+    };
+  });
+  return {
+    preview: true,
+    weekStart: input.weekStart,
+    targetHours: input.targetHours,
+    days,
+    summary: "Kế hoạch demo (không gọi Worker). Xác nhận trước khi tạo task.",
+    message: "Demo preview — bật Firebase + Worker để dùng model thật.",
+    model: "demo-heuristic",
+  };
+}
+
+export async function generateWeeklyPlan(
   input: WeeklyPlanRequest,
 ): Promise<WeeklyPlanResponse> {
+  if (isDemoMode) return demoWeeklyPlan(input);
   return workerJson<WeeklyPlanResponse>("/api/ai/weekly-plan", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function parseNaturalTask(
+  input: ParseTaskRequest,
+): Promise<ParseTaskResponse> {
+  const today = input.today ?? new Date().toISOString().slice(0, 10);
+  const subjects = input.subjects ?? [];
+  if (isDemoMode) {
+    return {
+      preview: true,
+      task: demoHeuristicParse(input.text, subjects, today),
+      message: "Demo parse — xác nhận trước khi lưu.",
+      model: "demo-heuristic",
+    };
+  }
+  return workerJson<ParseTaskResponse>("/api/ai/parse-task", {
+    method: "POST",
+    body: JSON.stringify({ ...input, today, subjects }),
   });
 }
 

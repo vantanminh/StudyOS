@@ -26,6 +26,22 @@ import { TASK_TYPE_LABELS } from "@/lib/labels";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { TaskType, Priority } from "@/types/domain";
+import { parseNaturalTask } from "@/lib/api/worker-client";
+import { Loader2, Sparkles } from "lucide-react";
+
+const TASK_TYPES = new Set(Object.keys(TASK_TYPE_LABELS));
+
+function asTaskType(value?: string): TaskType {
+  if (value && TASK_TYPES.has(value)) return value as TaskType;
+  return "custom";
+}
+
+function asPriority(value?: string): Priority {
+  if (value === "low" || value === "medium" || value === "high" || value === "critical") {
+    return value;
+  }
+  return "medium";
+}
 
 export function QuickAddDialog({
   open,
@@ -36,6 +52,8 @@ export function QuickAddDialog({
 }) {
   const { state, createTask } = useData();
   const [natural, setNatural] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [aiSource, setAiSource] = useState(false);
   const form = useForm<CreateTaskInput>({
     resolver: zodResolver(createTaskInputSchema),
     defaultValues: {
@@ -44,10 +62,54 @@ export function QuickAddDialog({
       priority: "medium",
       estimatedMinutes: 45,
       scheduledDate: format(new Date(), "yyyy-MM-dd"),
+      source: "manual",
     },
   });
 
-  function parseNatural(text: string) {
+  async function parseWithAi() {
+    const text = natural.trim();
+    if (!text) return;
+
+    if (state.profile?.aiEnabled) {
+      setParsing(true);
+      try {
+        const res = await parseNaturalTask({
+          text,
+          subjects: state.subjects.filter((s) => s.isActive).map((s) => s.name),
+          today: format(new Date(), "yyyy-MM-dd"),
+        });
+        const task = res.task;
+        if (!task) {
+          toast.error("AI không trả về task.");
+          return;
+        }
+        const subject = state.subjects.find(
+          (s) =>
+            task.subject &&
+            s.name.toLowerCase() === task.subject.toLowerCase(),
+        );
+        form.reset({
+          title: task.title || text.slice(0, 120),
+          type: asTaskType(task.type),
+          priority: asPriority(task.priority),
+          estimatedMinutes: task.estimatedMinutes || 45,
+          scheduledDate:
+            task.scheduledDate ?? format(new Date(), "yyyy-MM-dd"),
+          scheduledStartAt: task.scheduledStartAt ?? undefined,
+          subjectId: subject?.id,
+          source: "ai",
+        });
+        setAiSource(true);
+        toast.message(res.message ?? "Đã phân tích bằng AI. Kiểm tra trước khi lưu.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Parse AI thất bại");
+      } finally {
+        setParsing(false);
+      }
+      return;
+    }
+
+    // Local heuristic when AI is off
     const lower = text.toLowerCase();
     let type: TaskType = "custom";
     if (lower.includes("reading")) type = "reading";
@@ -61,7 +123,11 @@ export function QuickAddDialog({
     const estimatedMinutes = minutesMatch ? Number(minutesMatch[1]) : 45;
 
     let scheduledDate = format(new Date(), "yyyy-MM-dd");
-    if (lower.includes("thứ bảy") || lower.includes("saturday")) {
+    if (lower.includes("mai") || lower.includes("tomorrow")) {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      scheduledDate = format(d, "yyyy-MM-dd");
+    } else if (lower.includes("thứ bảy") || lower.includes("saturday")) {
       const d = new Date();
       const day = d.getDay();
       const diff = (6 - day + 7) % 7 || 7;
@@ -69,9 +135,10 @@ export function QuickAddDialog({
       scheduledDate = format(d, "yyyy-MM-dd");
     }
 
-    const subject = state.subjects.find((s) =>
-      lower.includes(s.name.toLowerCase()) ||
-      (s.shortName && lower.includes(s.shortName.toLowerCase())),
+    const subject = state.subjects.find(
+      (s) =>
+        lower.includes(s.name.toLowerCase()) ||
+        (s.shortName && lower.includes(s.shortName.toLowerCase())),
     );
 
     form.reset({
@@ -81,19 +148,29 @@ export function QuickAddDialog({
       estimatedMinutes,
       scheduledDate,
       subjectId: subject?.id,
+      source: "manual",
     });
-    toast.message("Đã phân tích câu lệnh. Hãy kiểm tra trước khi lưu.");
+    setAiSource(false);
+    toast.message(
+      "Đã phân tích heuristic (AI tắt). Bật AI trong Settings để dùng Worker.",
+    );
   }
 
   function onSubmit(values: CreateTaskInput) {
     try {
-      createTask(values);
+      createTask({
+        ...values,
+        source: aiSource ? "ai" : values.source ?? "manual",
+      });
       toast.success("Đã tạo task");
       onOpenChange(false);
       form.reset();
       setNatural("");
+      setAiSource(false);
     } catch {
-      toast.error("Không thể lưu task lúc này. Dữ liệu vẫn đang được giữ trên màn hình.");
+      toast.error(
+        "Không thể lưu task lúc này. Dữ liệu vẫn đang được giữ trên màn hình.",
+      );
     }
   }
 
@@ -103,7 +180,10 @@ export function QuickAddDialog({
         <DialogHeader>
           <DialogTitle>Quick Add</DialogTitle>
           <DialogDescription>
-            Tạo task nhanh bằng form hoặc câu mô tả tự nhiên (không cần AI).
+            Form hoặc câu mô tả tự nhiên.
+            {state.profile?.aiEnabled
+              ? " AI parse qua Cloudflare Worker — xác nhận trước khi lưu."
+              : " Heuristic local (bật AI trong Settings để dùng NL qua Worker)."}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +192,7 @@ export function QuickAddDialog({
             <Label htmlFor="natural">Câu mô tả</Label>
             <Textarea
               id="natural"
-              placeholder="Làm Cambridge 18 Reading Test 2 vào tối thứ bảy trong 60 phút"
+              placeholder="Học toán 45p mai 19h"
               value={natural}
               onChange={(e) => setNatural(e.target.value)}
             />
@@ -120,10 +200,22 @@ export function QuickAddDialog({
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => parseNatural(natural)}
-              disabled={!natural.trim()}
+              onClick={parseWithAi}
+              disabled={!natural.trim() || parsing}
             >
-              Phân tích câu
+              {parsing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang phân tích…
+                </>
+              ) : state.profile?.aiEnabled ? (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Phân tích bằng AI
+                </>
+              ) : (
+                "Phân tích câu"
+              )}
             </Button>
           </div>
 
@@ -174,7 +266,11 @@ export function QuickAddDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="date">Ngày</Label>
-                <Input id="date" type="date" {...form.register("scheduledDate")} />
+                <Input
+                  id="date"
+                  type="date"
+                  {...form.register("scheduledDate")}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="minutes">Phút</Label>
@@ -213,7 +309,11 @@ export function QuickAddDialog({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+              >
                 Huỷ
               </Button>
               <Button type="submit">Lưu task</Button>
