@@ -109,6 +109,8 @@ function useDemoStore(): DemoState {
 
 interface DataContextValue {
   state: DemoState;
+  /** False until the first Firebase auth callback (always true in demo mode). */
+  authReady: boolean;
   isAuthenticated: boolean;
   loginDemo: (name?: string) => void;
   loginFirebase: (
@@ -170,32 +172,50 @@ const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const state = useDemoStore();
+  const [authReady, setAuthReady] = useState(isDemoMode);
   const [, bump] = useState(0);
   const refresh = useCallback(() => bump((n) => n + 1), []);
 
   useEffect(() => {
-    if (isDemoMode) return;
+    if (isDemoMode) {
+      setAuthReady(true);
+      return;
+    }
 
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        firebaseUid = null;
-        memoryState = createEmptyState();
-        listeners.forEach((listener) => listener());
-        return;
-      }
-
-      firebaseUid = user.uid;
       try {
-        memoryState = await loadFirebaseState(user);
-      } catch {
-        memoryState = { ...createEmptyState(), syncStatus: "failed" };
+        if (!user) {
+          firebaseUid = null;
+          memoryState = createEmptyState();
+          return;
+        }
+
+        // Guest / anonymous Firebase accounts are not allowed.
+        if (user.isAnonymous) {
+          await signOut(auth);
+          firebaseUid = null;
+          memoryState = createEmptyState();
+          return;
+        }
+
+        firebaseUid = user.uid;
+        try {
+          memoryState = await loadFirebaseState(user);
+        } catch {
+          memoryState = { ...createEmptyState(), syncStatus: "failed" };
+        }
+      } finally {
+        setAuthReady(true);
+        listeners.forEach((listener) => listener());
       }
-      listeners.forEach((listener) => listener());
     });
   }, []);
 
   const loginDemo = useCallback((name = "Học sinh") => {
+    if (!isDemoMode) {
+      throw new Error("Guest login is disabled. Sign in with Google or email.");
+    }
     // Empty workspace; onboarding collects programs/subjects from the user.
     setState(createInitialState(name.trim() || "Học sinh"));
     refresh();
@@ -270,6 +290,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updatedAt: ts,
       }));
       const existing = getState().profile;
+      if (!isDemoMode && !firebaseUid && !existing?.uid) {
+        throw new Error("Phải đăng nhập trước khi hoàn tất onboarding.");
+      }
       const profile: UserProfile = {
         uid: existing?.uid ?? firebaseUid ?? "demo-user",
         email: existing?.email ?? "ban@studyos.local",
@@ -815,7 +838,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DataContextValue>(
     () => ({
       state,
-      isAuthenticated: Boolean(state.profile),
+      authReady,
+      isAuthenticated: Boolean(state.profile) && (isDemoMode || Boolean(firebaseUid)),
       loginDemo,
       loginFirebase,
       loginWithGoogle,
@@ -843,6 +867,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      authReady,
       loginDemo,
       loginFirebase,
       loginWithGoogle,

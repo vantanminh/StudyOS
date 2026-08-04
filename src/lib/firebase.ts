@@ -25,9 +25,14 @@ const firebaseConfig = {
     : {}),
 };
 
-export const isDemoMode =
-  import.meta.env.VITE_DEMO_MODE === "true" ||
-  !import.meta.env.VITE_FIREBASE_API_KEY;
+/**
+ * Local-only workspace without Firebase Auth.
+ * Opt-in via VITE_DEMO_MODE=true — production must keep this false
+ * so every user signs in (no guest / anonymous access).
+ */
+export const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+
+export const hasFirebaseConfig = Boolean(import.meta.env.VITE_FIREBASE_API_KEY);
 
 export const useEmulator =
   import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
