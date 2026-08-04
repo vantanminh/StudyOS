@@ -43,6 +43,9 @@ const SessionPage = lazy(() =>
 const MorePage = lazy(() =>
   import("@/pages/more-page").then((m) => ({ default: m.MorePage })),
 );
+const HelpPage = lazy(() =>
+  import("@/pages/help-page").then((m) => ({ default: m.HelpPage })),
+);
 
 function Loading() {
   return (
@@ -199,6 +202,14 @@ export const appRoutes = [
             element: (
               <Suspense fallback={<Loading />}>
                 <MorePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "/help",
+            element: (
+              <Suspense fallback={<Loading />}>
+                <HelpPage />
               </Suspense>
             ),
           },

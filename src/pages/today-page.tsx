@@ -9,10 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { greetingForHour, PRIORITY_LABELS, SUBJECT_COLOR_MAP } from "@/lib/labels";
 import { formatMinutes } from "@/lib/utils";
 import { calculatePriorityScore } from "@/lib/scoring";
-import { Flame, Play, Check, CalendarClock, AlertTriangle } from "lucide-react";
+import { Flame, Play, Check, CalendarClock, AlertTriangle, CircleHelp } from "lucide-react";
 import { toast } from "sonner";
 import { today } from "@/data/demo-store";
 import { addDays } from "date-fns";
+import { Link } from "react-router-dom";
 
 export function TodayPage() {
   const { state, completeTask, rescheduleTask, startSession } = useData();
@@ -116,6 +117,12 @@ export function TodayPage() {
             >
               <Play className="h-4 w-4" />
               Start Focus Session
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/help">
+                <CircleHelp className="h-4 w-4" />
+                Hướng dẫn
+              </Link>
             </Button>
           </div>
         </div>

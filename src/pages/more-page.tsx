@@ -5,6 +5,7 @@ import {
   BookOpen,
   ChartColumn,
   CheckSquare,
+  CircleHelp,
   ClipboardList,
   FolderOpen,
   Settings,
@@ -13,6 +14,7 @@ import { useData } from "@/providers/data-provider";
 import { LogoutButton } from "@/components/auth/logout-button";
 
 const links = [
+  { to: "/help", label: "Hướng dẫn", icon: CircleHelp },
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/subjects", label: "Subjects", icon: BookOpen },
   { to: "/exams", label: "Exams", icon: ClipboardList },
@@ -28,7 +30,7 @@ export function MorePage() {
 
   return (
     <div>
-      <PageHeader title="More" description="Các mục còn lại trên mobile." />
+      <PageHeader title="More" description="Hướng dẫn và các mục còn lại trên mobile." />
 
       {profile ? (
         <div className="mb-4 rounded-2xl border border-border/60 bg-card p-4 shadow-soft">

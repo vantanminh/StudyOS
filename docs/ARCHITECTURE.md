@@ -63,7 +63,7 @@ bun run dev:api            # Worker on :8787
 
 ## Routes (SPA)
 
-`/login` `/onboarding` `/today` `/planner` `/tasks` `/subjects` `/review` `/exams` `/errors` `/analytics` `/documents` `/settings` `/session/:id`
+`/login` `/onboarding` `/today` `/planner` `/tasks` `/subjects` `/review` `/exams` `/errors` `/analytics` `/documents` `/help` `/settings` `/session/:id` `/more`
 
 ## Worker API
 
