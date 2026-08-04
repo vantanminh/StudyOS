@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useData } from "@/providers/data-provider";
@@ -6,59 +6,101 @@ import type { StudyReminder } from "@/lib/automation";
 import { Button } from "@/components/ui/button";
 import { X, Bell } from "lucide-react";
 
+const REMINDER_REFRESH_MS = 60_000;
+
 /**
- * Runs Phase 4 automation once per authenticated session and shows
- * in-app reminder chips. Optional browser Notification when permitted.
+ * Runs Phase 4 automation for an authenticated session:
+ * auto-overdue, auto-review drafts, and in-app "nhắc học" chips.
+ * Re-runs when notification prefs flip on, and refreshes periodically
+ * so study-window reminders appear without a full page reload.
  */
 export function AutomationHost() {
   const { state, runAutomation, dismissReminder, authReady, isAuthenticated } =
     useData();
   const [reminders, setReminders] = useState<StudyReminder[]>([]);
-  const ran = useRef(false);
+  const booted = useRef(false);
+  const lastNotif = useRef<boolean | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!authReady || !isAuthenticated || !state.profile?.onboardingCompleted) {
-      return;
-    }
-    if (ran.current) return;
-    ran.current = true;
+  const sessionReady =
+    authReady &&
+    isAuthenticated &&
+    Boolean(state.profile?.onboardingCompleted);
 
-    const result = runAutomation();
-    setReminders(result.reminders);
+  const applyPass = useCallback(
+    (opts?: { announce?: boolean }) => {
+      const result = runAutomation();
+      setReminders(result.reminders);
 
-    if (result.overdueCount > 0) {
-      toast.message(`Đã đánh dấu ${result.overdueCount} task quá hạn`);
-    }
-    if (result.reviewCount > 0) {
-      toast.success(`Tự tạo ${result.reviewCount} mục ôn từ lỗi / chủ đề yếu`);
-    }
-
-    if (
-      state.profile.notificationsEnabled &&
-      typeof Notification !== "undefined" &&
-      Notification.permission === "granted"
-    ) {
-      const top = result.reminders[0];
-      if (top) {
-        try {
-          new Notification(top.title, { body: top.body, tag: top.id });
-        } catch {
-          /* ignore unsupported environments */
+      if (opts?.announce) {
+        if (result.overdueCount > 0) {
+          toast.message(`Đã đánh dấu ${result.overdueCount} task quá hạn`);
+        }
+        if (result.reviewCount > 0) {
+          toast.success(
+            `Tự tạo ${result.reviewCount} mục ôn từ lỗi / chủ đề yếu`,
+          );
         }
       }
-    }
-  }, [
-    authReady,
-    isAuthenticated,
-    state.profile?.onboardingCompleted,
-    state.profile?.notificationsEnabled,
-    runAutomation,
-  ]);
 
-  // Reset run flag on logout
+      if (
+        state.profile?.notificationsEnabled &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        const top = result.reminders[0];
+        if (top && opts?.announce) {
+          try {
+            new Notification(top.title, { body: top.body, tag: top.id });
+          } catch {
+            /* ignore unsupported environments */
+          }
+        }
+      }
+
+      return result;
+    },
+    [runAutomation, state.profile?.notificationsEnabled],
+  );
+
+  // Initial automation tick once the workspace is ready.
   useEffect(() => {
-    if (!isAuthenticated) ran.current = false;
+    if (!sessionReady) return;
+    if (booted.current) return;
+    booted.current = true;
+    lastNotif.current = state.profile?.notificationsEnabled ?? null;
+    applyPass({ announce: true });
+  }, [sessionReady, applyPass, state.profile?.notificationsEnabled]);
+
+  // Re-run when "Bật nhắc học" is toggled (clear when off, refresh when on).
+  useEffect(() => {
+    if (!sessionReady || !booted.current) return;
+    const enabled = state.profile?.notificationsEnabled ?? false;
+    if (lastNotif.current === enabled) return;
+    lastNotif.current = enabled;
+    if (!enabled) {
+      setReminders([]);
+      return;
+    }
+    applyPass({ announce: false });
+  }, [sessionReady, state.profile?.notificationsEnabled, applyPass]);
+
+  // Periodic silent refresh (study window / due reviews / overdue).
+  useEffect(() => {
+    if (!sessionReady) return;
+    const id = window.setInterval(() => {
+      applyPass({ announce: false });
+    }, REMINDER_REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, [sessionReady, applyPass]);
+
+  // Reset on logout so the next session boots automation again.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      booted.current = false;
+      lastNotif.current = null;
+      setReminders([]);
+    }
   }, [isAuthenticated]);
 
   if (reminders.length === 0) return null;

@@ -827,6 +827,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       >,
     ) => {
       const ts = nowIso();
+      const current = getState();
+      const prefs = mergePreferences(current.preferences, current.profile);
       const entry: ErrorLog = {
         ...input,
         id: createId("err"),
@@ -835,7 +837,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
         createdAt: ts,
         updatedAt: ts,
       };
-      setState({ ...getState(), errorLogs: [entry, ...getState().errorLogs] });
+
+      let reviewItems = current.reviewItems;
+      if (prefs.autoReviewFromErrors) {
+        const linked = reviewItems.some(
+          (r) => r.sourceType === "error" && r.sourceId === entry.id,
+        );
+        if (!linked) {
+          const interval = prefs.reviewIntervals[0] ?? 1;
+          const review: ReviewItem = {
+            id: createId("rev"),
+            sourceType: "error",
+            sourceId: entry.id,
+            subjectId: entry.subjectId,
+            topicId: entry.topicId,
+            title: `Ôn lỗi: ${entry.title}`,
+            content: entry.solution,
+            dueAt: ts,
+            intervalDays: interval,
+            priority:
+              entry.severity === "critical" || entry.severity === "high"
+                ? "high"
+                : "medium",
+            status: "pending",
+            reviewCount: 0,
+            createdAt: ts,
+            updatedAt: ts,
+          };
+          reviewItems = [review, ...reviewItems];
+        }
+      }
+
+      setState({
+        ...current,
+        errorLogs: [entry, ...current.errorLogs],
+        reviewItems,
+        preferences: prefs,
+      });
       refresh();
       return entry;
     },

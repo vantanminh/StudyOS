@@ -95,4 +95,8 @@ describe("task status transitions", () => {
     expect(canTransitionTaskStatus("in_progress", "completed")).toBe(true);
     expect(canTransitionTaskStatus("completed", "planned")).toBe(false);
   });
+
+  it("allows inbox -> overdue for auto-overdue", () => {
+    expect(canTransitionTaskStatus("inbox", "overdue")).toBe(true);
+  });
 });
