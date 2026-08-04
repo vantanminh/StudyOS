@@ -151,7 +151,8 @@ export function nextReviewIntervalDays(
 }
 
 export const TASK_STATUS_TRANSITIONS: Record<string, string[]> = {
-  inbox: ["planned", "in_progress", "cancelled", "archived"],
+  // Inbox tasks with a past deadline / scheduledDate can auto-overdue.
+  inbox: ["planned", "in_progress", "overdue", "cancelled", "archived"],
   planned: ["in_progress", "completed", "skipped", "overdue", "cancelled"],
   in_progress: ["completed", "skipped", "planned", "cancelled"],
   overdue: ["planned", "in_progress", "completed", "cancelled", "archived"],

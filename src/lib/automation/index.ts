@@ -1,6 +1,7 @@
 /**
  * Phase 4 automation engines — pure functions, no I/O.
- * DataProvider / UI apply results after user context is available.
+ * Covers auto-overdue, smart reschedule, in-app nhắc học, and auto-review drafts.
+ * DataProvider / AutomationHost apply results after user context is available.
  */
 
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
@@ -331,14 +332,11 @@ export function buildAutoReviewsFromErrors(
       .filter((r) => r.sourceType === "error" && r.sourceId)
       .map((r) => r.sourceId!),
   );
+  // Cap against all pending reviews so one pass cannot flood the queue.
   const pendingCap = Math.max(
     0,
     prefs.maxReviewsPerDay -
-      reviewItems.filter(
-        (r) =>
-          r.status === "pending" &&
-          format(parseISO(r.dueAt), "yyyy-MM-dd") <= todayKey(now),
-      ).length,
+      reviewItems.filter((r) => r.status === "pending").length,
   );
 
   const drafts: ReviewDraft[] = [];
@@ -353,7 +351,7 @@ export function buildAutoReviewsFromErrors(
       topicId: err.topicId,
       title: `Ôn lỗi: ${err.title}`,
       content: err.solution,
-      dueAt: addDays(now, 1).toISOString(),
+      dueAt: now.toISOString(),
       intervalDays: prefs.reviewIntervals[0] ?? 1,
       priority:
         err.severity === "critical" || err.severity === "high"
@@ -381,12 +379,8 @@ export function buildAutoReviewsFromWeakTopics(
       .filter((r) => r.sourceType === "topic" && r.sourceId)
       .map((r) => r.sourceId!),
   );
-  const pendingToday = reviewItems.filter(
-    (r) =>
-      r.status === "pending" &&
-      format(parseISO(r.dueAt), "yyyy-MM-dd") <= todayKey(now),
-  ).length;
-  let remaining = Math.max(0, prefs.maxReviewsPerDay - pendingToday);
+  const pendingCount = reviewItems.filter((r) => r.status === "pending").length;
+  let remaining = Math.max(0, prefs.maxReviewsPerDay - pendingCount);
 
   const weak = topics
     .filter(
@@ -411,7 +405,7 @@ export function buildAutoReviewsFromWeakTopics(
       content: subject ? `Môn ${subject.name}` : undefined,
       dueAt: (topic.nextReviewAt
         ? parseISO(topic.nextReviewAt)
-        : addDays(now, 1)
+        : now
       ).toISOString(),
       intervalDays: prefs.reviewIntervals[0] ?? 1,
       priority: topic.masteryScore < 30 ? "high" : "medium",

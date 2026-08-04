@@ -5,8 +5,10 @@ import {
   buildAutoReviewsFromWeakTopics,
   buildStudyReminders,
   planSmartReschedule,
+  runAutomationPass,
 } from "@/lib/automation";
 import { defaultStudyPreferences } from "@/lib/preferences";
+import { canTransitionTaskStatus } from "@/lib/scoring";
 import type {
   ErrorLog,
   ReviewItem,
@@ -46,6 +48,40 @@ describe("auto-overdue", () => {
     expect(changedIds).toEqual(["a"]);
     expect(tasks.find((t) => t.id === "a")?.status).toBe("overdue");
     expect(tasks.find((t) => t.id === "b")?.status).toBe("planned");
+  });
+
+  it("marks inbox tasks past deadline as overdue", () => {
+    expect(canTransitionTaskStatus("inbox", "overdue")).toBe(true);
+    const now = new Date("2026-08-04T12:00:00");
+    const { tasks, changedIds } = applyAutoOverdue(
+      [
+        task({
+          id: "inbox-late",
+          title: "Inbox late",
+          status: "inbox",
+          deadlineAt: "2026-08-01T00:00:00.000Z",
+        }),
+      ],
+      now,
+    );
+    expect(changedIds).toEqual(["inbox-late"]);
+    expect(tasks[0]?.status).toBe("overdue");
+  });
+
+  it("skips in_progress tasks", () => {
+    const now = new Date("2026-08-04T12:00:00");
+    const { changedIds } = applyAutoOverdue(
+      [
+        task({
+          id: "busy",
+          title: "Busy",
+          status: "in_progress",
+          scheduledDate: "2026-08-01",
+        }),
+      ],
+      now,
+    );
+    expect(changedIds).toEqual([]);
   });
 });
 
@@ -132,6 +168,38 @@ describe("auto review", () => {
     expect(drafts).toHaveLength(0);
   });
 
+  it("skips errors already linked to a review", () => {
+    const errors: ErrorLog[] = [
+      {
+        id: "e1",
+        title: "x",
+        type: "other",
+        severity: "low",
+        status: "new",
+        repeatCount: 1,
+        detectedAt: "2026-08-01T00:00:00.000Z",
+        createdAt: "2026-08-01T00:00:00.000Z",
+        updatedAt: "2026-08-01T00:00:00.000Z",
+      },
+    ];
+    const existing: ReviewItem[] = [
+      {
+        id: "r1",
+        sourceType: "error",
+        sourceId: "e1",
+        title: "Ôn lỗi: x",
+        dueAt: "2026-08-05T00:00:00.000Z",
+        intervalDays: 1,
+        priority: "medium",
+        status: "pending",
+        reviewCount: 0,
+        createdAt: "2026-08-01T00:00:00.000Z",
+        updatedAt: "2026-08-01T00:00:00.000Z",
+      },
+    ];
+    expect(buildAutoReviewsFromErrors(errors, existing, prefs)).toHaveLength(0);
+  });
+
   it("creates review for weak topics", () => {
     const topics: Topic[] = [
       {
@@ -157,9 +225,60 @@ describe("auto review", () => {
     expect(drafts).toHaveLength(1);
     expect(drafts[0]!.sourceType).toBe("topic");
   });
+
+  it("respects maxReviewsPerDay cap across error + weak topic drafts", () => {
+    const now = new Date("2026-08-04T12:00:00");
+    const errors: ErrorLog[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `e${i}`,
+      title: `Err ${i}`,
+      type: "other" as const,
+      severity: "medium" as const,
+      status: "new" as const,
+      repeatCount: 1,
+      detectedAt: "2026-08-01T00:00:00.000Z",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    }));
+    const topics: Topic[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `t${i}`,
+      subjectId: "s1",
+      name: `Topic ${i}`,
+      order: i,
+      status: "needs_review" as const,
+      masteryScore: 10,
+      totalQuestions: 5,
+      correctQuestions: 0,
+      totalStudyMinutes: 10,
+      createdAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    }));
+    const result = runAutomationPass({
+      profile: {
+        notificationsEnabled: false,
+      } as UserProfile,
+      preferences: { ...prefs, maxReviewsPerDay: 3 },
+      tasks: [],
+      topics,
+      subjects: [
+        {
+          id: "s1",
+          name: "Toán",
+          order: 0,
+          masteryScore: 40,
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        },
+      ],
+      errorLogs: errors,
+      reviewItems: [],
+      now,
+    });
+    expect(result.reviewDrafts.length).toBeLessThanOrEqual(3);
+  });
 });
 
-describe("reminders", () => {
+describe("reminders (nhắc học)", () => {
   it("returns empty when notifications disabled", () => {
     const profile = {
       notificationsEnabled: false,
@@ -190,5 +309,102 @@ describe("reminders", () => {
     });
     expect(reminders.some((r) => r.kind === "study_window")).toBe(true);
     expect(reminders.some((r) => r.kind === "task_due")).toBe(true);
+  });
+
+  it("includes overdue and review_due kinds", () => {
+    const profile = {
+      notificationsEnabled: true,
+      dailyStudyWindowStart: "19:00",
+      dailyStudyWindowEnd: "22:00",
+    } as UserProfile;
+    const reminders = buildStudyReminders({
+      profile,
+      tasks: [
+        task({ id: "1", title: "Late", status: "overdue", scheduledDate: "2026-08-01" }),
+      ],
+      reviewItems: [
+        {
+          id: "r1",
+          sourceType: "manual",
+          title: "Ôn",
+          dueAt: "2026-08-04T00:00:00.000Z",
+          intervalDays: 1,
+          priority: "medium",
+          status: "pending",
+          reviewCount: 0,
+          createdAt: "2026-08-01T00:00:00.000Z",
+          updatedAt: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      now: new Date("2026-08-04T12:00:00"),
+    });
+    expect(reminders.some((r) => r.kind === "overdue")).toBe(true);
+    expect(reminders.some((r) => r.kind === "review_due")).toBe(true);
+  });
+});
+
+describe("runAutomationPass", () => {
+  it("applies overdue, drafts reviews, and builds reminders together", () => {
+    const now = new Date("2026-08-04T20:00:00");
+    const prefs = defaultStudyPreferences();
+    const result = runAutomationPass({
+      profile: {
+        notificationsEnabled: true,
+        dailyStudyWindowStart: "19:00",
+        dailyStudyWindowEnd: "22:00",
+      } as UserProfile,
+      preferences: prefs,
+      tasks: [
+        task({ id: "late", title: "Late", scheduledDate: "2026-08-01" }),
+        task({ id: "today", title: "Today", scheduledDate: "2026-08-04" }),
+      ],
+      topics: [
+        {
+          id: "t1",
+          subjectId: "s1",
+          name: "Weak",
+          order: 0,
+          status: "needs_review",
+          masteryScore: 15,
+          totalQuestions: 4,
+          correctQuestions: 0,
+          totalStudyMinutes: 10,
+          createdAt: "2026-08-01T00:00:00.000Z",
+          updatedAt: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      subjects: [
+        {
+          id: "s1",
+          name: "Toán",
+          order: 0,
+          masteryScore: 20,
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        },
+      ],
+      errorLogs: [
+        {
+          id: "e1",
+          title: "Gap",
+          type: "knowledge_gap",
+          severity: "high",
+          status: "new",
+          repeatCount: 1,
+          detectedAt: "2026-08-01T00:00:00.000Z",
+          createdAt: "2026-08-01T00:00:00.000Z",
+          updatedAt: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      reviewItems: [],
+      now,
+    });
+
+    expect(result.overdueIds).toContain("late");
+    expect(result.tasks.find((t) => t.id === "late")?.status).toBe("overdue");
+    expect(result.reviewDrafts.length).toBeGreaterThanOrEqual(2);
+    expect(result.reminders.some((r) => r.kind === "overdue")).toBe(true);
+    expect(result.reminders.some((r) => r.kind === "study_window")).toBe(true);
   });
 });

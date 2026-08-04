@@ -87,7 +87,7 @@ Implementation: `worker/index.ts`, `worker/storage.ts`, `worker/ai.ts`, `worker/
 
 Frontend clients: `src/lib/api/worker-client.ts`, `src/lib/storage/provider.ts`.
 
-Automation (client-side, Phase 4): `src/lib/automation` — auto-overdue, smart reschedule preview/apply, in-app reminders (`dailyStudyWindow` / due tasks / reviews), auto-review from errors & weak topics (prefs). Hooked via `AutomationHost` + DataProvider `runAutomation`.
+Automation (client-side, Phase 4): `src/lib/automation` — auto-overdue (incl. inbox + deadline), smart reschedule preview/apply, in-app reminders / nhắc học (`dailyStudyWindow` / due tasks / reviews / overdue; `AutomationHost` refreshes periodically), auto-review from errors & weak topics (prefs + `maxReviewsPerDay` cap; `createErrorLog` respects `autoReviewFromErrors`). Hooked via `AutomationHost` + DataProvider `runAutomation`.
 
 ## Architecture notes
 

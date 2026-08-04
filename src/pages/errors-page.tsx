@@ -26,7 +26,7 @@ import type { ErrorType, Severity } from "@/types/domain";
 import { addDays } from "date-fns";
 
 export function ErrorsPage() {
-  const { state, createErrorLog, createReviewItem } = useData();
+  const { state, createErrorLog } = useData();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [type, setType] = useState<ErrorType>("knowledge_gap");
@@ -155,7 +155,7 @@ export function ErrorsPage() {
             <Button
               onClick={() => {
                 if (!title.trim()) return;
-                const error = createErrorLog({
+                createErrorLog({
                   title: title.trim(),
                   type,
                   severity,
@@ -164,26 +164,11 @@ export function ErrorsPage() {
                   solution,
                   nextReviewAt: addDays(new Date(), 1).toISOString(),
                 });
-                if (autoReview) {
-                  createReviewItem({
-                    sourceType: "error",
-                    sourceId: error.id,
-                    subjectId,
-                    title: `Ôn lỗi: ${error.title}`,
-                    dueAt: addDays(new Date(), 1).toISOString(),
-                    intervalDays: 1,
-                    priority:
-                      severity === "critical" || severity === "high"
-                        ? "high"
-                        : "medium",
-                    status: "pending",
-                  });
-                  toast.success("Đã ghi lỗi và tạo review");
-                } else {
-                  toast.success(
-                    "Đã ghi lỗi (auto-review tắt — bật trong Settings)",
-                  );
-                }
+                toast.success(
+                  autoReview
+                    ? "Đã ghi lỗi và tạo review"
+                    : "Đã ghi lỗi (auto-review tắt — bật trong Settings)",
+                );
                 setOpen(false);
                 setTitle("");
                 setSolution("");
