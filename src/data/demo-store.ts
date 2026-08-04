@@ -5,12 +5,14 @@ import type {
   ExamAttempt,
   Program,
   ReviewItem,
+  StudyPreferences,
   StudySession,
   StudyTask,
   Subject,
   Topic,
   UserProfile,
 } from "@/types/domain";
+import { defaultStudyPreferences } from "@/lib/preferences";
 import { format, startOfWeek } from "date-fns";
 
 /** Bumped so older localStorage seed data is not reused. */
@@ -18,6 +20,7 @@ const STORAGE_KEY = "studyos-demo-v2";
 
 export interface DemoState {
   profile: UserProfile | null;
+  preferences: StudyPreferences;
   programs: Program[];
   subjects: Subject[];
   topics: Topic[];
@@ -28,6 +31,8 @@ export interface DemoState {
   exams: Exam[];
   examAttempts: ExamAttempt[];
   dailyStats: DailyStats[];
+  /** Dismissed reminder ids for the current day (in-app notifications). */
+  dismissedReminderIds: string[];
   syncStatus: "synced" | "pending" | "failed";
 }
 
@@ -47,6 +52,7 @@ function today() {
 export function createEmptyState(): DemoState {
   return {
     profile: null,
+    preferences: defaultStudyPreferences(),
     programs: [],
     subjects: [],
     topics: [],
@@ -57,6 +63,7 @@ export function createEmptyState(): DemoState {
     exams: [],
     examAttempts: [],
     dailyStats: [],
+    dismissedReminderIds: [],
     syncStatus: "synced",
   };
 }
@@ -86,9 +93,15 @@ export function createInitialState(
       breakMinutes: 10,
       restDays: [0],
       aiEnabled: false,
+      notificationsEnabled: true,
       createdAt: ts,
       updatedAt: ts,
     },
+    preferences: defaultStudyPreferences({
+      weeklyTargetHours: 20,
+      restDays: [0],
+      breakMinutes: 10,
+    }),
   };
 }
 
@@ -113,10 +126,31 @@ export function clearDemoState(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+/** Normalize older persisted blobs that lack newer Phase 4 fields. */
+export function normalizeDemoState(raw: DemoState): DemoState {
+  const profile = raw.profile
+    ? {
+        ...raw.profile,
+        notificationsEnabled: raw.profile.notificationsEnabled ?? true,
+        aiEnabled: raw.profile.aiEnabled ?? false,
+      }
+    : null;
+  return {
+    ...createEmptyState(),
+    ...raw,
+    profile,
+    preferences: {
+      ...defaultStudyPreferences(profile),
+      ...(raw.preferences ?? {}),
+    },
+    dismissedReminderIds: raw.dismissedReminderIds ?? [],
+  };
+}
+
 /** Load persisted state or empty shell (no auto-filled sample data). */
 export function ensureDemoState(): DemoState {
   const existing = loadDemoState();
-  if (existing) return existing;
+  if (existing) return normalizeDemoState(existing);
   return createEmptyState();
 }
 

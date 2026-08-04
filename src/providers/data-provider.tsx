@@ -25,6 +25,7 @@ import {
   createId,
   createInitialState,
   ensureDemoState,
+  normalizeDemoState,
   nowIso,
   saveDemoState,
   today,
@@ -34,6 +35,7 @@ import type {
   ErrorLog,
   Program,
   ReviewItem,
+  StudyPreferences,
   StudySession,
   StudyTask,
   Subject,
@@ -42,8 +44,16 @@ import type {
 } from "@/types/domain";
 import type { CreateTaskInput, OnboardingProfileInput } from "@/schemas/domain";
 import { canTransitionTaskStatus, nextReviewIntervalDays } from "@/lib/scoring";
+import {
+  applyRescheduleMoves,
+  planSmartReschedule,
+  runAutomationPass,
+  type RescheduleMove,
+  type StudyReminder,
+} from "@/lib/automation";
+import { defaultStudyPreferences, mergePreferences } from "@/lib/preferences";
 import { getFirebaseAuth, getFirestoreDb, isDemoMode } from "@/lib/firebase";
-import { addDays } from "date-fns";
+import { addDays, startOfWeek } from "date-fns";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -83,10 +93,10 @@ async function loadFirebaseState(user: User): Promise<DemoState> {
   const stateRef = doc(getFirestoreDb(), "users", user.uid);
   const snapshot = await getDoc(stateRef);
   if (snapshot.exists()) {
-    return {
+    return normalizeDemoState({
       ...(snapshot.data() as DemoState),
       syncStatus: "synced",
-    };
+    });
   }
 
   const state = createInitialState(user.displayName || "Học sinh", {
@@ -128,6 +138,19 @@ interface DataContextValue {
     subjectNames: string[],
   ) => void;
   updateProfile: (patch: Partial<UserProfile>) => void;
+  updatePreferences: (patch: Partial<StudyPreferences>) => void;
+  /** Mark overdue, auto-create reviews from prefs, return fresh reminders. */
+  runAutomation: () => { overdueCount: number; reviewCount: number; reminders: StudyReminder[] };
+  dismissReminder: (id: string) => void;
+  previewSmartReschedule: (weekStart?: Date) => {
+    moves: RescheduleMove[];
+    overloadedDates: string[];
+    maxMinutesPerDay: number;
+  };
+  applySmartReschedule: (moves: RescheduleMove[]) => number;
+  createTasksFromPlan: (
+    items: Array<CreateTaskInput & { source?: StudyTask["source"] }>,
+  ) => StudyTask[];
   createSubject: (input: { name: string; colorToken?: string; programId?: string }) => Subject;
   updateSubject: (id: string, patch: Partial<Subject>) => void;
   deleteSubject: (id: string) => void;
@@ -308,12 +331,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         breakMinutes: profileInput.breakMinutes,
         restDays: existing?.restDays ?? [0],
         aiEnabled: existing?.aiEnabled ?? false,
+        notificationsEnabled: existing?.notificationsEnabled ?? true,
         createdAt: existing?.createdAt ?? ts,
         updatedAt: ts,
       };
       setState({
         ...getState(),
         profile,
+        preferences: defaultStudyPreferences(profile),
         programs,
         subjects,
         topics: [],
@@ -324,6 +349,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         exams: [],
         examAttempts: [],
         dailyStats: [],
+        dismissedReminderIds: [],
       });
       refresh();
     },
@@ -334,10 +360,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
     (patch: Partial<UserProfile>) => {
       const current = getState();
       if (!current.profile) return;
-      setState({
-        ...current,
-        profile: { ...current.profile, ...patch, updatedAt: nowIso() },
-      });
+      const profile = { ...current.profile, ...patch, updatedAt: nowIso() };
+      const preferences =
+        patch.weeklyTargetHours !== undefined ||
+        patch.restDays !== undefined ||
+        patch.breakMinutes !== undefined
+          ? {
+              ...current.preferences,
+              weeklyTargetHours:
+                patch.weeklyTargetHours ?? current.preferences.weeklyTargetHours,
+              restDays: patch.restDays ?? current.preferences.restDays,
+              minBreakMinutes:
+                patch.breakMinutes ?? current.preferences.minBreakMinutes,
+            }
+          : current.preferences;
+      setState({ ...current, profile, preferences });
+      refresh();
+    },
+    [refresh],
+  );
+
+  const updatePreferences = useCallback(
+    (patch: Partial<StudyPreferences>) => {
+      const current = getState();
+      const preferences = { ...mergePreferences(current.preferences, current.profile), ...patch };
+      const profile = current.profile
+        ? {
+            ...current.profile,
+            weeklyTargetHours: preferences.weeklyTargetHours,
+            restDays: preferences.restDays,
+            breakMinutes: preferences.minBreakMinutes,
+            updatedAt: nowIso(),
+          }
+        : current.profile;
+      setState({ ...current, preferences, profile });
       refresh();
     },
     [refresh],
@@ -446,7 +502,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         estimatedMinutes: input.estimatedMinutes ?? 45,
         actualMinutes: 0,
         progress: 0,
-        source: "manual",
+        source: input.source ?? "manual",
         needsReview: false,
         createdAt: ts,
         updatedAt: ts,
@@ -454,6 +510,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setState({ ...getState(), tasks: [task, ...getState().tasks] });
       refresh();
       return task;
+    },
+    [refresh],
+  );
+
+  const createTasksFromPlan = useCallback(
+    (items: Array<CreateTaskInput & { source?: StudyTask["source"] }>) => {
+      const ts = nowIso();
+      const created: StudyTask[] = items.map((input) => ({
+        id: createId("task"),
+        title: input.title,
+        description: input.description,
+        subjectId: input.subjectId,
+        topicId: input.topicId,
+        type: input.type ?? "custom",
+        status: input.scheduledDate ? ("planned" as const) : ("inbox" as const),
+        priority: input.priority ?? "medium",
+        scheduledDate: input.scheduledDate,
+        scheduledStartAt: input.scheduledStartAt,
+        deadlineAt: input.deadlineAt,
+        estimatedMinutes: input.estimatedMinutes ?? 45,
+        actualMinutes: 0,
+        progress: 0,
+        source: input.source ?? "ai",
+        needsReview: false,
+        createdAt: ts,
+        updatedAt: ts,
+      }));
+      setState({ ...getState(), tasks: [...created, ...getState().tasks] });
+      refresh();
+      return created;
     },
     [refresh],
   );
@@ -781,11 +867,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const completeReview = useCallback(
     (reviewId: string, result: ReviewItem["lastResult"]) => {
       const current = getState();
+      const intervals =
+        current.preferences.reviewIntervals.length > 0
+          ? current.preferences.reviewIntervals
+          : [1, 3, 7, 14, 30];
       const reviewItems = current.reviewItems.map((r) => {
         if (r.id !== reviewId) return r;
         const interval = nextReviewIntervalDays(
           r.reviewCount + 1,
           result ?? "good",
+          intervals,
         );
         return {
           ...r,
@@ -818,6 +909,89 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const runAutomation = useCallback(() => {
+    const current = getState();
+    const prefs = mergePreferences(current.preferences, current.profile);
+    const pass = runAutomationPass({
+      profile: current.profile,
+      preferences: prefs,
+      tasks: current.tasks,
+      topics: current.topics,
+      subjects: current.subjects,
+      errorLogs: current.errorLogs,
+      reviewItems: current.reviewItems,
+    });
+
+    const newReviews: ReviewItem[] = pass.reviewDrafts.map((draft) => ({
+      ...draft,
+      id: createId("rev"),
+      reviewCount: 0,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    }));
+
+    const changed =
+      pass.overdueIds.length > 0 ||
+      newReviews.length > 0 ||
+      pass.tasks !== current.tasks;
+
+    if (changed) {
+      setState({
+        ...current,
+        tasks: pass.tasks,
+        reviewItems: [...newReviews, ...current.reviewItems],
+        preferences: prefs,
+      });
+      refresh();
+    }
+
+    const dismissed = new Set(current.dismissedReminderIds);
+    return {
+      overdueCount: pass.overdueIds.length,
+      reviewCount: newReviews.length,
+      reminders: pass.reminders.filter((r) => !dismissed.has(r.id)),
+    };
+  }, [refresh]);
+
+  const dismissReminder = useCallback(
+    (id: string) => {
+      const current = getState();
+      if (current.dismissedReminderIds.includes(id)) return;
+      setState({
+        ...current,
+        dismissedReminderIds: [...current.dismissedReminderIds, id],
+      });
+      refresh();
+    },
+    [refresh],
+  );
+
+  const previewSmartReschedule = useCallback((weekStart?: Date) => {
+    const current = getState();
+    const prefs = mergePreferences(current.preferences, current.profile);
+    const start = weekStart ?? startOfWeek(new Date(), { weekStartsOn: 1 });
+    return planSmartReschedule({
+      tasks: current.tasks,
+      weekStart: start,
+      maxMinutesPerDay: Math.round(prefs.maxHoursPerDay * 60),
+      restDays: prefs.restDays,
+    });
+  }, []);
+
+  const applySmartReschedule = useCallback(
+    (moves: RescheduleMove[]) => {
+      if (moves.length === 0) return 0;
+      const current = getState();
+      setState({
+        ...current,
+        tasks: applyRescheduleMoves(current.tasks, moves),
+      });
+      refresh();
+      return moves.length;
+    },
+    [refresh],
+  );
+
   const resetDemo = useCallback(() => {
     const name = getState().profile?.displayName ?? "Học sinh";
     const current = getState().profile;
@@ -846,12 +1020,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       logout,
       completeOnboarding,
       updateProfile,
+      updatePreferences,
+      runAutomation,
+      dismissReminder,
+      previewSmartReschedule,
+      applySmartReschedule,
       createSubject,
       updateSubject,
       deleteSubject,
       createTopic,
       updateTopic,
       createTask,
+      createTasksFromPlan,
       updateTask,
       completeTask,
       rescheduleTask,
@@ -874,12 +1054,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       logout,
       completeOnboarding,
       updateProfile,
+      updatePreferences,
+      runAutomation,
+      dismissReminder,
+      previewSmartReschedule,
+      applySmartReschedule,
       createSubject,
       updateSubject,
       deleteSubject,
       createTopic,
       updateTopic,
       createTask,
+      createTasksFromPlan,
       updateTask,
       completeTask,
       rescheduleTask,

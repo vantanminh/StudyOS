@@ -130,6 +130,24 @@ export const createTaskInputSchema = z.object({
   scheduledStartAt: z.string().optional(),
   estimatedMinutes: z.number().int().min(1).max(480),
   deadlineAt: z.string().optional(),
+  source: z.enum(["manual", "ai", "system"]).optional(),
+});
+
+export const studyPreferencesSchema = z.object({
+  weeklyTargetHours: z.number().min(1).max(80),
+  maxHoursPerDay: z.number().min(0.5).max(16),
+  maxTaskMinutes: z.number().int().min(15).max(480),
+  minBreakMinutes: z.number().int().min(0).max(60),
+  noScheduleAfter: z.string().optional(),
+  restDays: z.array(z.number().int().min(0).max(6)),
+  pomodoroFocus: z.number().int().min(5).max(90),
+  pomodoroShortBreak: z.number().int().min(1).max(30),
+  pomodoroLongBreak: z.number().int().min(5).max(60),
+  pomodoroSessionsBeforeLong: z.number().int().min(1).max(8),
+  reviewIntervals: z.array(z.number().int().min(1)).min(1),
+  maxReviewsPerDay: z.number().int().min(1).max(50),
+  autoReviewFromErrors: z.boolean(),
+  autoReviewFromWeakTopics: z.boolean(),
 });
 
 export const onboardingProfileSchema = z.object({
@@ -251,3 +269,4 @@ export const reviewItemSchema = z.object({
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
 export type OnboardingProfileInput = z.infer<typeof onboardingProfileSchema>;
 export type TaskCompletionInput = z.infer<typeof taskCompletionSchema>;
+export type StudyPreferencesInput = z.infer<typeof studyPreferencesSchema>;

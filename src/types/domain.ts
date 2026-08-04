@@ -108,6 +108,8 @@ export interface UserProfile {
   breakMinutes: number;
   restDays: number[];
   aiEnabled: boolean;
+  /** In-app (and optional browser) study reminders. */
+  notificationsEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
