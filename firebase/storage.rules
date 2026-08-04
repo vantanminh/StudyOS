@@ -1,16 +1,10 @@
 rules_version = '2';
+// StudyOS no longer uses Firebase Storage (files → Cloudflare R2 via Worker).
+// Rules left deny-all so a misconfigured bucket cannot accept writes.
 service firebase.storage {
   match /b/{bucket}/o {
-    function isSignedInNonAnonymous() {
-      return request.auth != null
-        && request.auth.token.firebase.sign_in_provider != 'anonymous';
-    }
-
-    match /users/{uid}/{allPaths=**} {
-      allow read: if isSignedInNonAnonymous() && request.auth.uid == uid;
-      allow write: if isSignedInNonAnonymous()
-        && request.auth.uid == uid
-        && request.resource.size < 25 * 1024 * 1024;
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

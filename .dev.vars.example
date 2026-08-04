@@ -1,0 +1,6 @@
+# Local Wrangler (gitignored as .dev.vars) — bun run dev:api
+# Must match VITE_FIREBASE_PROJECT_ID in .env
+
+FIREBASE_PROJECT_ID=studyos-49701
+# OPENROUTER_API_KEY=sk-or-...
+# CORS_ORIGINS=http://localhost:5173

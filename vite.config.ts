@@ -14,6 +14,15 @@ export default defineConfig({
       "@": path.resolve(rootDir, "./src"),
     },
   },
+  server: {
+    // Local UI → Worker API (run `bun run dev:api` in another terminal).
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {

@@ -1,7 +1,10 @@
 /**
- * StorageProvider abstraction — swap Firebase Storage <-> Cloudflare R2
- * without changing UI code.
+ * StorageProvider — Cloudflare R2 via StudyOS Worker (no Firebase Storage / Blaze).
+ * Upload path: presign → PUT /api/storage/objects (Worker streams into R2 binding).
  */
+
+import { isDemoMode } from "@/lib/firebase";
+import { apiBaseUrl, getIdToken, workerJson } from "@/lib/api/worker-client";
 
 export interface UploadParams {
   uid: string;
@@ -13,68 +16,171 @@ export interface UploadParams {
 
 export interface UploadResult {
   storageKey: string;
-  provider: "r2" | "firebase";
+  provider: "r2";
   uploadUrl: string;
   publicUrl?: string;
   expiresAt?: string;
+  method?: "PUT";
+  headers?: Record<string, string>;
 }
 
 export interface StorageProvider {
-  readonly name: "r2" | "firebase";
+  readonly name: "r2";
+  /** Mint upload target (does not transfer bytes). */
   getUploadUrl(params: UploadParams): Promise<UploadResult>;
+  /** Presign + PUT file body to R2 via Worker. */
+  uploadFile(params: UploadParams, file: Blob): Promise<UploadResult>;
   getDownloadUrl(storageKey: string): Promise<string>;
+  /** Fetch object bytes (authenticated). */
+  downloadBlob(storageKey: string): Promise<Blob>;
   deleteObject(storageKey: string): Promise<void>;
 }
 
-/** Placeholder R2 provider — Cloud Functions will mint signed URLs. */
-export class CloudflareR2Provider implements StorageProvider {
+interface PresignResponse {
+  storageKey: string;
+  provider: "r2";
+  method: "PUT";
+  uploadUrl: string;
+  headers?: Record<string, string>;
+  expiresAt?: string;
+  maxBytes?: number;
+}
+
+function resolveUrl(pathOrUrl: string): string {
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl;
+  }
+  return `${apiBaseUrl()}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`;
+}
+
+/** Demo / offline: no network, local object URLs only for UI smoke tests. */
+class DemoStorageProvider implements StorageProvider {
   readonly name = "r2" as const;
+  private store = new Map<string, Blob>();
 
   async getUploadUrl(params: UploadParams): Promise<UploadResult> {
     const folder = params.folder ?? "documents";
     const storageKey = `${params.uid}/${folder}/${Date.now()}-${params.fileName}`;
-    // In production this calls a Cloud Function / Worker that returns a signed PUT URL.
     return {
       storageKey,
       provider: "r2",
-      uploadUrl: `/api/storage/upload?key=${encodeURIComponent(storageKey)}`,
+      method: "PUT",
+      uploadUrl: `demo://${storageKey}`,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     };
   }
 
-  async getDownloadUrl(storageKey: string): Promise<string> {
-    return `/api/storage/download?key=${encodeURIComponent(storageKey)}`;
+  async uploadFile(params: UploadParams, file: Blob): Promise<UploadResult> {
+    const meta = await this.getUploadUrl(params);
+    this.store.set(meta.storageKey, file);
+    return meta;
   }
 
-  async deleteObject(_storageKey: string): Promise<void> {
-    // Implemented via Cloud Function / Worker
+  async getDownloadUrl(storageKey: string): Promise<string> {
+    const blob = this.store.get(storageKey);
+    if (!blob) return `demo://${storageKey}`;
+    return URL.createObjectURL(blob);
+  }
+
+  async downloadBlob(storageKey: string): Promise<Blob> {
+    const blob = this.store.get(storageKey);
+    if (!blob) throw new Error("File demo không tồn tại.");
+    return blob;
+  }
+
+  async deleteObject(storageKey: string): Promise<void> {
+    this.store.delete(storageKey);
   }
 }
 
-/** Firebase Storage provider for simpler all-Firebase setups. */
-export class FirebaseStorageProvider implements StorageProvider {
-  readonly name = "firebase" as const;
+/** Production R2 via Cloudflare Worker. */
+export class CloudflareR2Provider implements StorageProvider {
+  readonly name = "r2" as const;
 
   async getUploadUrl(params: UploadParams): Promise<UploadResult> {
-    const folder = params.folder ?? "documents";
-    const storageKey = `${params.uid}/${folder}/${Date.now()}-${params.fileName}`;
+    const data = await workerJson<PresignResponse>("/api/storage/presign", {
+      method: "POST",
+      body: JSON.stringify({
+        fileName: params.fileName,
+        contentType: params.contentType,
+        sizeBytes: params.sizeBytes,
+        folder: params.folder ?? "documents",
+      }),
+    });
     return {
-      storageKey,
-      provider: "firebase",
-      uploadUrl: `gs://bucket/${storageKey}`,
+      storageKey: data.storageKey,
+      provider: "r2",
+      method: "PUT",
+      uploadUrl: data.uploadUrl,
+      headers: data.headers,
+      expiresAt: data.expiresAt,
     };
   }
 
-  async getDownloadUrl(storageKey: string): Promise<string> {
-    return `https://firebasestorage.googleapis.com/v0/b/bucket/o/${encodeURIComponent(storageKey)}`;
+  async uploadFile(params: UploadParams, file: Blob): Promise<UploadResult> {
+    const meta = await this.getUploadUrl({
+      ...params,
+      sizeBytes: params.sizeBytes || file.size,
+      contentType: params.contentType || file.type || "application/octet-stream",
+    });
+
+    const token = await getIdToken();
+    const headers = new Headers(meta.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (!headers.has("Content-Type")) {
+      headers.set(
+        "Content-Type",
+        params.contentType || file.type || "application/octet-stream",
+      );
+    }
+
+    const res = await fetch(resolveUrl(meta.uploadUrl), {
+      method: "PUT",
+      headers,
+      body: file,
+    });
+
+    if (!res.ok) {
+      let message = `Upload thất bại (${res.status})`;
+      try {
+        const err = (await res.json()) as { error?: string };
+        if (err.error) message = err.error;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
+
+    return meta;
   }
 
-  async deleteObject(_storageKey: string): Promise<void> {
-    // Implemented via Firebase SDK / Functions
+  async getDownloadUrl(storageKey: string): Promise<string> {
+    return resolveUrl(
+      `/api/storage/objects?key=${encodeURIComponent(storageKey)}`,
+    );
+  }
+
+  async downloadBlob(storageKey: string): Promise<Blob> {
+    const token = await getIdToken();
+    const res = await fetch(await this.getDownloadUrl(storageKey), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      throw new Error(`Tải file thất bại (${res.status})`);
+    }
+    return res.blob();
+  }
+
+  async deleteObject(storageKey: string): Promise<void> {
+    await workerJson(`/api/storage/objects?key=${encodeURIComponent(storageKey)}`, {
+      method: "DELETE",
+    });
   }
 }
 
-let activeProvider: StorageProvider = new CloudflareR2Provider();
+let activeProvider: StorageProvider = isDemoMode
+  ? new DemoStorageProvider()
+  : new CloudflareR2Provider();
 
 export function getStorageProvider(): StorageProvider {
   return activeProvider;
