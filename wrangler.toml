@@ -2,6 +2,8 @@ name = "studyos"
 compatibility_date = "2026-08-01"
 
 # Serve the Vite SPA as a Cloudflare Worker with Workers Static Assets.
+# Note: Firebase VITE_* vars are build-time (Vite), not Worker runtime vars.
+# They come from `.env.production` in the repo (or Cloudflare Build env vars).
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"

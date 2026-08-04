@@ -14,7 +14,9 @@ dist-ssr
 *.local
 .env
 .env.local
-.env.production
+# `.env.production` is committed on purpose: Vite bakes VITE_* at build time.
+# Cloudflare Git builds have no local `.env`; production client Firebase config lives there.
+.env.*.local
 
 # Editor
 .vscode/*

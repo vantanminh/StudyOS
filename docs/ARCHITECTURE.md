@@ -47,7 +47,7 @@ bun run dev
 ## Firebase setup
 
 1. Create a Firebase project (Blaze for Functions).
-2. Fill `VITE_FIREBASE_*` in `.env`.
+2. Fill `VITE_FIREBASE_*` in `.env` (local). Keep `.env.production` in sync for Cloudflare/CI production builds.
 3. Keep `VITE_DEMO_MODE=false` (required for production — no guest access).
 4. Enable **Email/Password** and **Google** sign-in (Console → Authentication → Sign-in method), or deploy auth config: `bunx firebase-tools deploy --only auth`.
    Anonymous auth must stay **disabled**.
@@ -58,10 +58,33 @@ bun run dev
 
 ## Cloudflare
 
+### Manual deploy (local)
+
 ```bash
 bunx wrangler login
 bun run deploy:worker
 ```
+
+Local deploy works because `vite build` reads `.env` / `.env.production` on your machine.
+
+### Automatic deploy (Cloudflare Git)
+
+Vite embeds `VITE_*` **at build time**, not at Worker runtime. Cloudflare’s Git build does **not** see your local `.env` (gitignored).
+
+StudyOS ships a committed **`.env.production`** with the public Firebase web client config so Cloudflare / CI builds bake the correct values. Update that file when the Firebase web app config changes.
+
+If you prefer not to commit config, set the same `VITE_FIREBASE_*` keys as **Build environment variables** in the Cloudflare dashboard (Workers → your worker → Settings → Build / Variables), then remove or empty the committed values as needed.
+
+| Variable | Required |
+|----------|----------|
+| `VITE_FIREBASE_API_KEY` | yes |
+| `VITE_FIREBASE_AUTH_DOMAIN` | yes |
+| `VITE_FIREBASE_PROJECT_ID` | yes |
+| `VITE_FIREBASE_STORAGE_BUCKET` | yes |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | yes |
+| `VITE_FIREBASE_APP_ID` | yes |
+| `VITE_FIREBASE_MEASUREMENT_ID` | optional |
+| `VITE_DEMO_MODE` | `false` |
 
 ## MVP phases
 
