@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartColumn,
   CheckSquare,
+  CircleHelp,
   FileText,
   FolderOpen,
   LayoutDashboard,
@@ -33,6 +34,7 @@ const desktopNav = [
   { to: "/errors", label: "Error Log", icon: AlertCircle },
   { to: "/analytics", label: "Analytics", icon: ChartColumn },
   { to: "/documents", label: "Documents", icon: FolderOpen },
+  { to: "/help", label: "Hướng dẫn", icon: CircleHelp },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -162,7 +164,7 @@ export function AppShell() {
             const active =
               location.pathname === item.to ||
               (item.to === "/more" &&
-                ["/subjects", "/tasks", "/exams", "/errors", "/analytics", "/documents", "/settings"].some(
+                ["/subjects", "/tasks", "/exams", "/errors", "/analytics", "/documents", "/help", "/settings"].some(
                   (p) => location.pathname.startsWith(p),
                 ));
             return (

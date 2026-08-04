@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useData } from "@/providers/data-provider";
 import { PageHeader } from "@/components/shared/page";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { isDemoMode } from "@/lib/firebase";
 import { mergePreferences } from "@/lib/preferences";
+import { CircleHelp } from "lucide-react";
 
 export function SettingsPage() {
   const { state, updateProfile, updatePreferences, exportJson, resetDemo } =
@@ -61,6 +63,23 @@ export function SettingsPage() {
       />
 
       <div className="space-y-4">
+        <Card className="border-primary/15 bg-sage-soft/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CircleHelp className="h-4 w-4 text-primary" aria-hidden />
+              Hướng dẫn sử dụng
+            </CardTitle>
+            <CardDescription>
+              Chưa rõ từng màn hình? Xem hướng dẫn tiếng Việt trong app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/help">Mở hướng dẫn</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Tài khoản</CardTitle>
