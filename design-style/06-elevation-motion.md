@@ -1,10 +1,8 @@
 # 06 — Elevation & chuyển động
 
-Độ nổi StudyOS đến từ **bóng nâu ấm rất nhẹ** và **kính mờ**, không từ layer đen hay neon. Chuyển động nhỏ, chậm, dễ tắt.
+Độ nổi đến từ **bóng nâu ấm rất nhẹ** và **kính mờ**. Chuyển động nhỏ, chậm, dễ tắt.
 
 ## Bóng
-
-Hai utility — gần như đủ cho cả app:
 
 ```css
 --shadow-soft: 0 4px 20px -4px rgb(74 63 53 / 0.08),
@@ -13,91 +11,65 @@ Hai utility — gần như đủ cho cả app:
                0 4px 12px -4px rgb(74 63 53 / 0.06);
 ```
 
-Màu bóng = `ink-700` (`74 63 53`), không phải black. Opacity 4–12%.
+Màu bóng = ink (`74 63 53`), không black. Opacity 4–12%.
 
 | Utility | Khi nào |
 | --- | --- |
-| `shadow-soft` | Card, input, nav active, badge surface, toast nhẹ, button primary |
-| `shadow-lift` | Dialog, select content, FAB, login card, session card, hover primary, More tile hover |
+| `shadow-soft` | Card, input, nav active, button primary |
+| `shadow-lift` | Dialog, select, FAB, auth card, hover primary, tile bấm được |
 
-Cặp hover chuẩn của nút primary: `shadow-soft` → `hover:shadow-lift` + `hover:brightness-105`.
+Nút primary: `shadow-soft` → `hover:shadow-lift` + `hover:brightness-105`.
 
-**Không:** `shadow-md/lg/xl` mặc định Tailwind (đen), `drop-shadow`, glow `shadow-primary/50`, viền giả 3D.
-
-Bề mặt đã có border kem (`border-border/60–70`) thì bóng chỉ việc “nâng giấy”, không cần nặng.
+Không `shadow-md/lg/xl` Tailwind (đen), không glow màu, không 3D.
 
 ## Blur & kính
 
 | Mặt | Công thức |
 | --- | --- |
 | Sidebar | `bg-card/70 backdrop-blur-sm` |
-| Mobile header | `bg-background/80 backdrop-blur-md` |
+| Header sticky | `bg-background/80 backdrop-blur-md` |
 | Bottom nav | `bg-card/95 backdrop-blur-md` |
-| Login card | `bg-card/90 backdrop-blur-sm` |
+| Auth card | `bg-card/90 backdrop-blur-sm` |
 | Dialog overlay | `bg-ink-900/30 backdrop-blur-[2px]` |
-| Login blobs | `blur-3xl` trên vòng pastel |
+| Auth blobs | `blur-3xl` |
 
-Blur là để **lộ nền kem/blob**, không phải glassmorphism iOS dày. Overlay dialog chỉ `2px` — vẫn đọc được trang dưới, vẫn focus được modal.
+Blur để lộ nền kem — không glass iOS dày.
 
-## Tầng bề mặt (elevation scale)
+## Tầng bề mặt
 
-Từ thấp lên cao:
-
-1. **Canvas** — `background` + radial global, không bóng.
-2. **Sunken** — `cream-50/80` trong card, dashed empty, secondary track.
+1. **Canvas** — background + radial, không bóng.
+2. **Sunken** — `cream-50/80`, dashed empty, secondary track.
 3. **Resting card** — `bg-card shadow-soft border-border/70 rounded-2xl`.
-4. **Tinted card** — resting + `bg-peach-soft/40` (countdown) hoặc `bg-sage-soft/40` (help intro).
-5. **Lifted** — dialog, login, session, FAB: `shadow-lift`.
+4. **Tinted card** — resting + `peach-soft/40` hoặc `sage-soft/40`.
+5. **Lifted** — dialog, auth, FAB, màn hình tập trung: `shadow-lift`.
 6. **Overlay** — ink 30% + blur.
 
-Một trang điển hình chỉ dùng 2–4. Session được phép nhảy tầng 5 ngay vì là “màn hình nghi lễ”.
+Một trang dùng 2–4 tầng. Màn hình tập trung được nhảy tầng 5.
 
-## Keyframes hiện có
-
-Định nghĩa trong `src/index.css`:
+## Keyframes
 
 ### `animate-fade-up`
 
-- 0 → 8px lên, fade in, `0.45s ease-out both`.
-- Trang vào, `PageHeader`, login card, hero Today.
-- Stagger: `style={{ animationDelay: "60ms" }}` cho hàng tiếp (Today stats). Bước stagger 40–80ms. Không quá 200ms.
+Opacity 0→1, `translateY(8px)`→0, `0.45s ease-out both`. Trang vào, header, auth card. Stagger 40–80ms, tối đa 3–4 phần, delay ≤ 200ms.
 
 ### `animate-soft-pulse`
 
-- Opacity 1 ↔ 0.7, `2.4s ease-in-out infinite`.
-- Skeleton (`SkeletonBlock` trên `bg-secondary`).
-- Login blob sage.
-- Không dùng cho nút hay chữ (gây loé).
+Opacity 1 ↔ 0.7, `2.4s ease-in-out infinite`. Skeleton trên `bg-secondary`. Blob auth. Không pulse chữ/nút.
 
 ### `animate-float`
 
-- TranslateY 0 ↔ `-4px`, `3.5s ease-in-out infinite`.
-- Ô icon login, empty state 🍃.
-- **Một** float mỗi viewport. Không float nav.
+`translateY(0)` ↔ `-4px`, `3.5s ease-in-out infinite`. Ô icon auth, empty 🍃. **Một** float mỗi viewport.
 
 ### Khác
 
-- Spinner: Lucide `Loader2` + `animate-spin` — loading auth/AI.
-- Progress fill: `transition-all duration-500 ease-out`.
-- Button: `transition-all` + `active:scale-[0.98]` — nhấn có “thật”.
-- Dialog: Radix `animate-in/out` (duration ~200ms).
+- Spinner: icon + `animate-spin`.
+- Progress: `duration-500 ease-out`.
+- Button: `transition-all` + `active:scale-[0.98]`.
+- Dialog: ~200ms.
 
-## Timing
-
-| Loại | Duration | Easing |
-| --- | --- | --- |
-| Hover màu / bóng | ~150–200ms | default / ease |
-| Fade-up vào trang | 450ms | ease-out |
-| Dialog | 200ms | Radix |
-| Progress | 500ms | ease-out |
-| Pulse / float loop | 2.4s / 3.5s | ease-in-out |
-| Active press | tức thì scale 0.98 | — |
-
-Không bounce, không elastic, không page-flip. Không animation > 500ms trừ loop trang trí.
+Không bounce, elastic, page-flip. Không animation trang trí > 500ms trừ loop.
 
 ## Reduced motion
-
-Đã global:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -109,20 +81,19 @@ Không bounce, không elastic, không page-flip. Không animation > 500ms trừ 
 }
 ```
 
-UI mới **không** được bypass bằng inline `animation: ... !important`. Loop float/pulse tự tắt. Logic timer session vẫn chạy — chỉ UI motion dừng.
+Không bypass. Timer/số liệu vẫn cập nhật — chỉ UI motion dừng.
 
 ## Hover & press
 
-- Desktop: hover đổi nền `secondary` / `cream-300`, hoặc brightness trên primary.
-- Press: `active:scale-[0.98]` trên button — đủ, đừng thêm rotate/skew.
-- Card More: `hover:shadow-lift` — nâng giấy, không scale cả tile (tránh layout shift).
-- Không hover-only thông tin quan trọng — mobile không có hover.
+- Hover: `secondary` / `cream-300`, hoặc brightness trên primary.
+- Press: `active:scale-[0.98]` trên button. Tile: `hover:shadow-lift`, không scale cả card.
+- Không thông tin chỉ hiện khi hover.
 
-## Những chuyển động cấm
+## Cấm
 
 - Parallax nền
-- Confetti khi complete task
-- Shake form error (dùng chữ `text-destructive` là đủ)
-- Skeleton shimmer bạc (dùng `soft-pulse` trên `bg-secondary`)
-- Auto-playing Lottie lớn
-- Transition route custom phức tạp — `Outlet key={pathname}` + fade-up nội dung là đủ
+- Confetti hoàn thành
+- Shake lỗi form
+- Skeleton shimmer bạc
+- Lottie lớn autoplay
+- Transition route phức tạp — fade-up nội dung là đủ

@@ -1,81 +1,73 @@
 # 11 — Accessibility
 
-Dịu dàng phải **dùng được**: bàn phím, reader, giảm motion, contrast trên giấy kem.
+Dịu dàng phải dùng được: bàn phím, reader, giảm motion, contrast trên giấy kem.
 
 ## Focus
 
-Mọi control tương tác: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` (và `ring-offset-2` trên nút). Ring = `primary` `#6b8f71`.
+Mọi control: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` (+ `ring-offset-2` trên nút). Ring `#6b8f71`.
 
-Không `outline-none` mà không ring thay thế. Không chỉ dựa vào hover.
+Không `outline-none` trơn. Không chỉ hover.
 
-Thứ tự tab theo DOM. Dialog Radix đã trap focus + Escape. Close có `aria-label="Đóng"`.
+Thứ tự tab theo DOM. Dialog trap focus + Escape. Close có accessible name.
 
 ## Tên gọi
 
-- Nav: `aria-label="Điều hướng chính"` / `"Điều hướng mobile"`.
-- FAB: `aria-label="Thêm task"`.
-- Quick Add header button: `"Thêm nhanh"`.
-- Session Pause/Resume/End: label Việt.
-- Loader giữa màn: `aria-label="Đang tải"`.
-- Blobs / deco: `aria-hidden`.
-- Empty emoji ô: `aria-hidden`.
-- Skeleton: `aria-hidden`.
-
-Icon-only = luôn có accessible name.
+- Nav: `aria-label` (“Điều hướng chính”, “Primary”).
+- FAB / icon-only: `aria-label`.
+- Loader: `aria-label` đang tải.
+- Blob, empty emoji, skeleton: `aria-hidden`.
 
 ## Contrast
 
-Nền kem làm muted (`#7a6b5d` trên `#f7f1e8`) đạt khoảng **AA cho chữ ≥ 14px semibold / 18px regular**. Vì vậy:
+Muted `#7a6b5d` trên `#f7f1e8` đạt khoảng **AA** cho chữ ≥ 14px semibold / 18px regular.
 
-- Body quan trọng: `ink-800` / `ink-900`, không muted.
-- Muted chỉ caption, timestamp, nav inactive, placeholder.
-- Placeholder không phải instruction duy nhất — luôn có Label.
+- Body quan trọng: `ink-800` / `ink-900`.
+- Muted: caption, timestamp, nav inactive, placeholder.
+- Placeholder không thay label.
 - Chữ trên `*-soft`: `ink-800`, `primary` (sage-soft), hoặc `destructive` (rose-soft).
-- Nút primary: kem trên `#6b8f71` — đủ. Không đổi primary sang `sage` nhạt.
-- `primary/15` badge: chữ `primary` đậm, size `xs` semibold — chấp nhận cho chip, không cho đoạn văn.
-
-Destructive `#c45c5c` trên kem: cảnh báo/link OK. Trên rose-soft: tốt hơn cho badge.
+- Nút primary: kem trên `#6b8f71`. Không đổi sang `sage` nhạt.
+- Badge `primary/15`: chip OK, không dùng cho đoạn văn.
 
 ## Motion
 
-Xem [06-elevation-motion.md](./06-elevation-motion.md). `prefers-reduced-motion` đã cắt animation/transition global. Timer session **không** phải animation trang trí — vẫn cập nhật số.
+[06-elevation-motion.md](./06-elevation-motion.md). Cắt animation khi `prefers-reduced-motion`. Số đếm / timer vẫn chạy.
 
-Không autoplay video/sound. Notification hệ thống chỉ khi user bật và đã grant.
+Không autoplay video/sound. Notification hệ thống chỉ khi user bật.
 
-## Touch & mục tiêu
+## Touch
 
 - Control chính ≥ 44px (`h-11`).
-- Bottom nav: cả cột bấm được, không chỉ icon.
+- Bottom nav: cả cột bấm được.
 - FAB 56px.
-- Hàng settings: cả row cao thoáng, switch không dính nhau.
+- Hàng settings thoáng, switch không dính.
 
-## Đọc số & thời gian
+## Số & thời gian
 
-- Timer `tabular-nums` + format `mm:ss`.
-- `formatMinutes` ra “2 giờ 15 phút” — tốt cho reader hơn `2h15`.
-- Ngày: `EEEE, d MMMM yyyy` locale `vi`.
-- Chart: không chỉ màu — có số ở stat row phía trên.
+- `tabular-nums` cho giờ và KPI.
+- Thời lượng nên đọc được (“2 giờ 15 phút”) hơn `2h15` nếu audience phổ thông.
+- Ngày theo locale website.
+- Chart: có số ở stat, không chỉ màu.
 
 ## Form
 
-- Label visible, không chỉ placeholder.
-- `autoComplete` đúng trên login (`email`, `current-password` / `new-password`).
-- `required` khi field bắt buộc.
-- Lỗi: text, không chỉ màu viền.
-- Disabled: `opacity-50` + `pointer-events-none` / `cursor-not-allowed`; khi busy, disable cả form (login đã làm).
+- Label visible.
+- `autocomplete` đúng trên auth.
+- `required` khi bắt buộc.
+- Lỗi bằng chữ, không chỉ viền.
+- Busy: disable form, spinner trong nút.
 
-## Ngôn ngữ trang
+## Ngôn ngữ
 
-`<html lang="vi">`. Đừng để đoạn Anh dài không khai báo nếu sau này xen nội dung Anh.
+`html lang` đúng. Đoạn ngoại ngữ dài: đánh dấu `lang` riêng.
 
-## Keyboard trên custom widget
+## Widget
 
-Tabs, Select, Dialog, Switch: Radix — giữ primitive, đừng thay `div onClick` cho tab. Chip onboarding là `button` (toggle) — Enter/Space hoạt động.
+Tabs, select, dialog, switch: primitive có keyboard (Radix hoặc tương đương). Chip chọn = `button`, không `div onClick`.
 
-## Cấm a11y-break
+## Cấm
 
-- Text trong ảnh
-- Contrast xám nhạt trên peach
-- `title` tooltip là thông tin duy nhất
-- Blink / pulse trên chữ
-- Bắt buộc hover để hiện CTA
+- Text trong ảnh là thông tin duy nhất
+- Muted trên peach-soft cho đoạn dài
+- `title` tooltip là tên duy nhất của nút
+- Blink / pulse chữ
+- CTA chỉ hiện khi hover

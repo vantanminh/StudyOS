@@ -1,109 +1,45 @@
 # 13 — Nên và không nên
 
-Checklist ngắn khi review UI. Chi tiết nằm ở các file khác.
+Checklist review UI khi áp dụng Giấy ấm cho website bất kỳ.
 
 ## Màu
 
-**Nên**
+**Nên:** nền `background` / `card`, chữ ink; một CTA primary; pastel `-soft` cho chip và tint; rose-soft cảnh báo nhẹ; butter-soft nhắc; sage-soft success.
 
-- Nền `background` / `card`, chữ `ink-900` / `ink-800`.
-- Một primary CTA.
-- Pastel `-soft` cho chip, tint card, empty icon well.
-- Overdue = rose-soft; reminder = butter-soft; success = sage-soft.
-
-**Không**
-
-- `zinc`, `slate`, `neutral` Tailwind mặc định.
-- `#000` / `#fff` thuần.
-- Gradient trên nút, chữ rainbow.
-- Primary nhạt (`sage`) làm nền nút + chữ kem.
-- Dark mode đảo màu tạm.
-- 5+ pastel trên một card.
+**Không:** `zinc` / `slate`; `#000` / `#fff` thuần; gradient nút; `sage` nhạt làm nền CTA; dark mode đảo; 5+ pastel một card.
 
 ## Chữ
 
-**Nên**
+**Nên:** Fraunces H1/H2/card title/số lớn; Nunito semibold nút/nav/label; body `text-sm`; `tabular-nums` cho số.
 
-- Fraunces cho H1/H2/CardTitle/timer.
-- Nunito semibold cho nút, nav, label.
-- `text-sm` body, `text-xs` meta.
-- `tabular-nums` cho giờ và stat.
+**Không:** font thứ 3; Fraunces trong button; ALL CAPS trừ kicker; body `text-base` hàng loạt trong app; chữ < 10px.
 
-**Không**
+## Layout
 
-- Inter / Roboto / font thứ 3.
-- Fraunces trong button.
-- ALL CAPS trừ kicker session.
-- Body `text-base` hàng loạt (phá mật độ).
-- Chữ < 10px.
+**Nên:** card `rounded-2xl shadow-soft border-border/70`; control `h-11 rounded-xl`; `space-y-6` / `gap-3`; `pb-24` nếu có bottom nav.
 
-## Layout & hình khối
-
-**Nên**
-
-- Card `rounded-2xl shadow-soft border-border/70`.
-- Control `h-11 rounded-xl`.
-- `space-y-6` giữa section, `gap-3` grid.
-- `pb-24` trên mobile (đã có shell).
-
-**Không**
-
-- Card góc vuông / `rounded-md` nhỏ.
-- Shadow đen `shadow-xl`.
-- Full-bleed bảng Excel.
-- Sticky CTA đè bottom nav.
+**Không:** card góc vuông / radius 6–8px; `shadow-xl` đen; bảng Excel full-bleed; sticky CTA đè nav.
 
 ## Motion
 
-**Nên**
+**Nên:** `animate-fade-up` vào trang; `active:scale-[0.98]` nút; một float / viewport.
 
-- `animate-fade-up` khi vào trang.
-- `active:scale-[0.98]` trên button.
-- Một float / viewport.
-
-**Không**
-
-- Parallax, confetti, shake.
-- Pulse chữ.
-- Bỏ qua `prefers-reduced-motion`.
+**Không:** parallax, confetti, shake; pulse chữ; bỏ `prefers-reduced-motion`.
 
 ## Component
 
-**Nên**
+**Nên:** empty dashed + 🍃 (hoặc một glyph trong ô sage-soft); toast top-center card; dialog `max-w-lg` bo 2xl.
 
-- Dùng primitive sẵn có.
-- EmptyState dashed + 🍃.
-- Toast top-center card style.
-- Dialog `max-w-lg` bo 2xl.
-
-**Không**
-
-- Alert native browser cho flow chính.
-- Modal full-screen không cần thiết.
-- Badge bấm được giả làm nút.
-- Placeholder thay label.
+**Không:** `alert()` cho flow chính; modal full-screen không cần; badge giả nút; placeholder thay label.
 
 ## Nội dung
 
-**Nên**
+**Nên:** ngắn, ấm; gợi ý tự động = xem trước + xác nhận; lỗi có cách sửa.
 
-- Việt, xưng bạn, câu ngắn.
-- AI = xem trước + xác nhận.
-- Lỗi có cách sửa.
-
-**Không**
-
-- Hustle copy, emoji 🚀💯 trong H1.
-- Mã lỗi Firebase trần.
-- “Bạn đã thất bại streak”.
+**Không:** hustle copy, emoji 🚀 trong H1; mã lỗi trần; đổ lỗi user.
 
 ## Icon
 
-**Nên**
+**Nên:** Lucide (hoặc SVG 1 màu), 16px mặc định, map vai trò ổn định trong *website đó*.
 
-- Lucide, size 16 mặc định, map nav ổn định.
-
-**Không**
-
-- Đổi icon Today mỗi sprint.
-- Icon nhiều màu trong một hàng nav.
+**Không:** đổi icon home mỗi lần; 8 màu icon trên một nav.

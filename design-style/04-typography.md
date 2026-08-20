@@ -9,59 +9,61 @@ Hai họ chữ, hai việc. Không thêm font thứ ba.
 | UI / body | **Nunito** | `ui-sans-serif, system-ui, sans-serif` | 400, 500, 600, 700, 800 |
 | Display / tiêu đề | **Fraunces** | `Georgia, serif` | opsz 9–144; 500, 600, 700 |
 
-Load qua Google Fonts trong `index.html` (`preconnect` + stylesheet). Token:
-
 ```css
 --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
 --font-display: "Fraunces", Georgia, serif;
 ```
 
-Utility: `font-sans` (mặc định body), `font-display`.
+Utility: `font-sans` (body), `font-display` (tiêu đề).
 
-**Tại sao cặp này:** Nunito tròn, humanist, dễ đọc trên mobile. Fraunces là old-style serif có optical size — đủ “ấn tượng học thuật nhẹ” mà không cứng như Times. Cùng nhau chúng tạo cảm giác **vở + chữ in**, khớp giấy kem.
+Nunito tròn, dễ đọc mobile. Fraunces old-style, optical size — học thuật nhẹ, không cứng Times. Cùng nhau: **vở + chữ in** trên giấy kem.
 
-Không dùng Inter, Roboto, system-ui làm display. Không dùng Fraunces cho nút, nav, form, badge.
+Không Inter / Roboto làm display. Không Fraunces cho nút, nav, form, badge.
+
+Google Fonts:
+
+```
+https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;500;600;700;800&display=swap
+```
+
+`preconnect` `fonts.googleapis.com` và `fonts.gstatic.com`.
 
 ## Cân nặng
 
 | Weight | Nunito | Fraunces |
 | --- | --- | --- |
-| 400 Regular | Body dài, caption nếu cần nhẹ | Không dùng |
-| 500 Medium | Ít dùng; ưu tiên 400 hoặc 600 | Display nhẹ (hiếm) |
-| 600 Semibold | **Mặc định UI**: nút, nav, label, badge, card title nhỏ | **Mặc định display** |
-| 700 Bold | Nhấn trong body, gần như không cần | Tiêu đề rất lớn nếu cần |
-| 800 ExtraBold | Tránh — quá nặng trên nền mềm | — |
+| 400 | Body, caption nhẹ | Không dùng |
+| 500 | Ít dùng | Display nhẹ (hiếm) |
+| 600 | **Mặc định UI** (nút, nav, label, badge) | **Mặc định display** |
+| 700 | Nhấn body, gần như không cần | Tiêu đề rất lớn nếu cần |
+| 800 | Tránh | — |
 
-Mặc định tiêu đề: `font-display font-semibold` (600). Mặc định UI đậm: `font-semibold`.
+## Thang chữ
 
-## Thang chữ chính thức
+| Bậc | Size | Weight | Font | Dùng |
+| --- | --- | --- | --- | --- |
+| Display XL | `text-6xl` (60px) | 600 | Fraunces | Số lớn (timer, KPI hero), `tabular-nums` |
+| Display L | `text-4xl` (36px) | 600 | Fraunces | Wordmark auth, H1 marketing |
+| Display M | `text-3xl` (30px) | 600 | Fraunces | Page title, hero trong app — `tracking-tight` |
+| Display S | `text-2xl` (24px) | 600 | Fraunces | Section lớn, empty lớn, stat lớn |
+| Title | `text-xl` (20px) | 600 | Fraunces | `h2`, card lớn |
+| Card title | `text-lg` (18px) | 600 | Fraunces | Card / dialog title |
+| Body | `text-sm` (14px) | 400–600 | Nunito | Hầu hết UI |
+| Body strong | `text-sm` | 600 | Nunito | Nav, button, label |
+| Meta | `text-xs` (12px) | 400–600 | Nunito | Caption, badge, helper, tick |
+| Micro | `11px`–`10px` | 600 | Nunito | Truncate phụ; **chỉ** label bottom nav ở `10px` |
 
-Dùng thang này cho UI mới. Số trong ngoặc là size Tailwind.
+**Sàn:** ≥ `12px` trừ label bottom nav `10px`.
 
-| Bậc | Size | Line | Weight | Font | Dùng |
-| --- | --- | --- | --- | --- | --- |
-| Display XL | `text-6xl` (60px) | tight | 600 | Fraunces | Timer Focus Session, `tabular-nums` |
-| Display L | `text-4xl` (36px) | tight | 600 | Fraunces | Wordmark login |
-| Display M | `text-3xl` (30px) | `tracking-tight` | 600 | Fraunces | Page title (`PageHeader`), hero Today |
-| Display S | `text-2xl` (24px) | snug | 600 | Fraunces | Tiêu đề session, empty lớn, số stat lớn |
-| Title | `text-xl` (20px) | snug | 600 | Fraunces | `CardTitle` lớn, section (`h2`) |
-| Card title | `text-lg` (18px) | none / tight | 600 | Fraunces | `CardTitle` mặc định, dialog title |
-| Body | `text-sm` (14px) | relaxed/normal | 400–600 | Nunito | Body, mô tả, form value, hầu hết UI |
-| Body strong | `text-sm` | normal | 600 | Nunito | Nav, button, label |
-| Meta | `text-xs` (12px) | normal | 400–600 | Nunito | Caption, badge, helper, chart tick |
-| Micro | `text-[11px]`–`text-[10px]` | normal | 600 | Nunito | Email truncate, **chỉ** label bottom nav (`10px`) |
+Body mặc định hệ này là `text-sm`, không `text-base` — mật độ gọn. Nút `lg` được `text-base`. Nút `sm` dùng `text-xs`.
 
-**Sàn:** không dưới `10px`. Bottom nav là ngoại lệ có chủ đích vì 5 cột. Mọi chỗ khác ≥ `12px` (`text-xs`).
+Landing marketing có thể H1 `text-4xl`–`text-5xl`; body vẫn `text-sm` hoặc tối đa `text-base` cho đoạn đọc dài (`max-w-3xl`).
 
-Body mặc định của app là `text-sm`, không `text-base`. Đó là mật độ “gọn” của StudyOS — đừng nâng cả app lên 16px nếu không redesign spacing.
-
-Nút `lg` được phép `text-base`. Nút `sm` dùng `text-xs`.
-
-## Hierarchy một trang chuẩn
+## Hierarchy trang chuẩn
 
 ```
-kicker     text-sm font-semibold text-primary     ← “Chào buổi chiều, An”
-title      font-display text-3xl font-semibold text-ink-900
+kicker     text-sm font-semibold text-primary
+title      font-display text-3xl font-semibold tracking-tight text-ink-900
 subtitle   text-sm text-muted-foreground
 section    font-display text-xl font-semibold text-ink-900
 card title font-display text-lg font-semibold
@@ -69,54 +71,46 @@ body       text-sm text-foreground / ink-800
 meta       text-xs text-muted-foreground
 ```
 
-`PageHeader` đã mã hoá title + description. Dùng nó, đừng tự invent H1 khác style.
-
-Kicker (dòng nhỏ primary trước H1) dùng cho Today, onboarding step, session mode — tạo nhịp “ấm, rồi vào việc”.
+Kicker (dòng primary trước H1) cho greeting, bước wizard, nhãn màn hình tập trung.
 
 ## Tracking & số
 
-- Page title: `tracking-tight` — Fraunces hơi rộng optical, siết nhẹ cho gọn.
-- Session timer: `tabular-nums` bắt buộc để phút:giây không nhảy layout.
-- Stat số lớn (`text-2xl` / `text-3xl`): khuyến nghị `tabular-nums`.
-- Không `uppercase` trừ kicker session (`Focus Session · pomodoro`) — và khi uppercase phải `tracking-wide` + `text-sm` + `text-primary`.
-- Không `italic` cho UI. Fraunces italic chỉ nếu sau này có quote editorial (hiện không có).
+- Page title: `tracking-tight`.
+- Số lớn / giờ: `tabular-nums`.
+- `uppercase` chỉ kicker nghi lễ: `tracking-wide text-sm text-primary`.
+- Không italic UI. Fraunces italic chỉ cho quote editorial (hiếm).
 
 ## Độ dài dòng
 
 | Loại | Max |
 | --- | --- |
-| Page description, empty body | `max-w-sm` (~24rem) |
-| Help / bài dài | `max-w-3xl` như Help page |
-| Onboarding | `max-w-2xl` |
-| Login card | `max-w-md` |
-| Session | `max-w-lg` |
-| App shell content | max app `1440px`, padding `px-4 sm:px-6 lg:px-8` |
+| Description, empty | `max-w-sm` |
+| Bài / docs | `max-w-3xl` |
+| Wizard / onboarding | `max-w-2xl` |
+| Auth card | `max-w-md` |
+| Màn hình tập trung | `max-w-lg` |
+| App shell | `1440px`, pad `px-4 sm:px-6 lg:px-8` |
 
-Đoạn mô tả dưới title: một câu, không quá ~90 ký tự nếu có thể.
+Mô tả dưới title: một câu, ~90 ký tự nếu có thể.
 
 ## Căn lề
 
-- App: trái. Dialog header: trái (`text-left`).
-- Login, onboarding intro, session, empty: **giữa**.
-- Số stat trong mini card: trái, không center — dễ scan cột.
+- App, dialog header, stat: **trái**.
+- Auth, wizard intro, empty, màn hình tập trung: **giữa**.
 
 ## Antialiasing
 
-Body đã `antialiased`. Giữ nguyên. Không `subpixel-antialiased`.
+`antialiased` trên body. Không `subpixel-antialiased`.
 
-## Tiếng Việt
+## Ngôn ngữ có dấu
 
-Nunito và Fraunces cover tốt dấu tiếng Việt. Vẫn:
+Nunito + Fraunces cover tốt tiếng Việt và Latin. Không `truncate` tiêu đề quan trọng nếu chưa có tooltip. `truncate` được cho email / meta. Tránh `break-all`.
 
-- Không cắt chữ bằng `truncate` trên **tiêu đề task** nếu chưa có tooltip/title.
-- `truncate` được phép cho email trong sidebar (`text-[11px]`).
-- `hyphens` không cần. Tránh `break-all`.
-
-## Checklist chữ
+## Checklist
 
 - [ ] H1/H2/card title = Fraunces semibold
 - [ ] Button, nav, badge, label = Nunito semibold
 - [ ] Mô tả = `text-sm text-muted-foreground`
-- [ ] Không font thứ 3, không Google Font mới
-- [ ] Timer/stat = `tabular-nums`
+- [ ] Không font thứ 3
+- [ ] Số lớn = `tabular-nums`
 - [ ] Không chữ trắng trên pastel soft

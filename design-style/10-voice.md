@@ -1,65 +1,56 @@
 # 10 — Giọng văn & microcopy
 
-UI chủ yếu **tiếng Việt**. Tên mục điều hướng có thể giữ tiếng Anh ngắn đã quen (Today, Planner, Tasks, Settings). Câu hướng dẫn, toast, empty, lỗi: Việt.
+Hệ Giấy ấm nói **ngắn, ấm, rõ, không hối**. Ngôn ngữ do website đích chọn (Việt, Anh, …) — giọng giữ nguyên.
 
 ## Tính cách chữ
 
-Như người bạn học điềm đạm: **rõ, ngắn, ấm, không hối**.
+Như người bạn điềm đạm.
 
 | Có | Không |
 | --- | --- |
-| “Hôm nay cần học gì?” | “LET’S GO 🚀 Crush today’s grind” |
-| “Thiết lập xong. Chúc bạn học vui!” | “Onboarding completed successfully.” |
-| “Đã dời sang ngày mai” | “Task rescheduled to T+1” |
-| “Hãy chọn ít nhất một môn” | “Validation Error: subjects[] empty” |
-| “Không thể đăng nhập.” + lý do | “Auth/internal/500” |
+| “Không thể đăng nhập. Kiểm tra email rồi thử lại.” | `AUTH_500` / stack trace |
+| “Đã lưu.” | “Operation completed successfully!!!” |
+| “Chưa có mục nào. Tạo mục đầu tiên.” | “Your pipeline is empty. Let’s crush it 🚀” |
+| “Hãy nhập tên hiển thị.” | `ValidationError: displayName` |
 
-Xưng **bạn**. Greeting theo giờ: “Chào buổi sáng / chiều / tối, {tên}”.
+Xưng “bạn” (Việt) hoặc trung tính lịch sự. Greeting theo giờ được phép trên home: “Chào buổi sáng / chiều / tối”.
 
-## Cấu trúc câu
+Tránh dấu chấm than. Tối đa một câu cảm thán khi hoàn tất wizard.
 
-- Nút: động từ hoặc cụm ngắn — “Lưu”, “Thêm lỗi”, “Start Focus Session”, “Về Today”.
-- Empty: title ngắn + description một câu + CTA.
-- Toast success: đã xong việc gì. Toast error: chuyện gì + làm gì tiếp.
-- Helper: `text-xs muted`, không giải thích lại title.
+## Cấu trúc
 
-Tránh dấu chấm than. Tối đa một câu cảm thán khi hoàn thành onboarding.
+- Nút: 1–4 từ, động từ — “Lưu”, “Tiếp tục”, “Huỷ”, “Xoá”.
+- Empty: title ngắn + một câu + CTA.
+- Toast success: đã xong việc gì. Toast error: chuyện gì + bước tiếp.
+- Helper: `text-xs muted`, không nhắc lại title.
 
 ## Lỗi
-
-Map thân thiện (login đã làm mẫu): đóng popup, chặn popup, domain chưa phép, mật khẩu yếu… — **tiếng người**, không mã Firebase.
-
-Pattern:
 
 1. Một câu sự thật.
 2. Một câu hướng xử lý nếu user làm được.
 
-Ví dụ: “Trình duyệt chặn popup. Hãy cho phép popup rồi thử lại.”
+Không đổ lỗi “bạn đã sai”. Không mã nội bộ trên UI.
 
-Không đổ lỗi “bạn đã làm sai”. Không stack trace trên UI.
+## Gợi ý tự động / AI
 
-## AI & automation
+Chỉ **đề xuất**. Copy phải nói xem trước / xác nhận trước khi ghi.
 
-AI chỉ **đề xuất**. Copy phải nói “xem trước”, “xác nhận trước khi lưu/tạo”.
+Đúng: “Xem trước — xác nhận trước khi lưu.”  
+Sai: “Hệ thống đã tạo 12 mục.” (khi chưa confirm)
 
-Đúng: “Xem trước task — xác nhận trước khi lưu.”  
-Sai: “AI đã tạo 12 task.” (nếu chưa confirm)
+## Số liệu nhạy
 
-Reminder butter: nhắc giờ học, không “Bạn đang trễ tiến độ”.
+Disclaimer `text-xs muted` nếu chỉ số dễ hiểu như cam kết. Banner nhắc: butter, không “bạn đang thất bại”.
 
-Analytics readiness: luôn có disclaimer “chỉ số tham khảo, không phải dự đoán chắc chắn”.
+## Việt / Anh
 
-## Trộn Việt / Anh
-
-Giữ Anh khi là **tên riêng trong product**: Today, Planner, Quick Add, Focus Session, Error Log, Knowledge Map, More.
-
-Viết câu thì Việt: “Bấm Quick Add để tạo việc học”. Không “Please click Quick Add to create a new learning task”.
+Một website một quy ước nhãn nav. Câu hướng dẫn thống nhất ngôn ngữ trang (`lang` trên `html`). Không trộn trong cùng một câu nếu không cần.
 
 ## Chữ trên pastel
 
-`text-ink-800` hoặc `text-primary` / `text-destructive` theo semantic. Không chữ trắng. Không chữ `muted-foreground` dài trên peach-soft (khó đọc).
+`ink-800`, hoặc `primary` / `destructive` theo semantic. Không chữ trắng. Không muted dài trên peach-soft.
 
-## Độ dài khuyến nghị
+## Độ dài
 
 | Loại | Độ dài |
 | --- | --- |
@@ -69,11 +60,8 @@ Viết câu thì Việt: “Bấm Quick Add để tạo việc học”. Không 
 | Toast | ≤ 90 ký tự |
 | Dialog description | 1–2 câu |
 
-## Danh sách copy chuẩn đã có
+## Slot copy website đích tự viết
 
-Dùng lại, đừng paraphrase mỗi lần:
-
-- Tagline: “Không gian học tập dịu dàng”
-- Empty mặc định cảm xúc: yên, “chưa có…”, mời một hành động
-- Sync: “Đã đồng bộ” / “Đang chờ” / “Thất bại”
-- Nav Help: “Hướng dẫn”
+- Tagline (một dòng, ấm)
+- Empty: “Chưa có…”, mời một hành động
+- Trạng thái hệ thống: xong / đang chờ / thất bại — map badge success / warn / danger

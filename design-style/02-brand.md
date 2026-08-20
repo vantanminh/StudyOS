@@ -1,59 +1,58 @@
-# 02 — Thương hiệu
+# 02 — Thương hiệu (khuôn gắn sản phẩm)
 
-## Tên
+Hệ **Giấy ấm** không sở hữu tên website. File này là **khuôn nhận diện**: website đích điền tên, tagline, icon — giữ nguyên hình khối, màu, chữ.
 
-**StudyOS** — hệ điều hành học tập. Không viết `Study OS`, `studyos`, `StudyDash` trên UI (tên package npm là `studydash`, chỉ dùng nội bộ).
+## Những gì website đích tự điền
 
-Tagline chính thức:
+| Slot | Quy tắc hình | Ví dụ (bạn thay) |
+| --- | --- | --- |
+| Tên | Fraunces semibold, `text-ink-900`, không tracking rộng, không gradient chữ | `{Tên sản phẩm}` |
+| Tagline | Nunito `text-xs` `text-muted-foreground`, một dòng | câu ngắn, ấm, không hustle |
+| Mô tả meta | Một câu, không slogan “10x” / “crush goals” | mô tả việc website làm |
+| Icon mark | Lucide (hoặc SVG 1 màu) trong ô sage-soft, `text-primary` | một glyph đơn |
 
-> Không gian học tập dịu dàng
+Không đổi cream / sage / Fraunces / Nunito để “khớp ngành”. Ngành thể hiện bằng **nội dung và icon**, không bằng skin mới.
 
-Mô tả dài (login, meta description):
+## Tính cách thị giác
 
-> Hệ điều hành học tập dịu dàng cho kỳ thi lớp 12 và IELTS.
-
-Không dùng slogan kiểu “học thông minh hơn”, “crush your goals”, “10x productivity”.
-
-## Tính cách
-
-StudyOS là **người bạn học điềm đạm**: biết việc, không hối thúc, nói ngắn, luôn để lối thoát.
+Giấy ấm nói bằng hình như **người bạn điềm đạm**: biết việc, không hối, nói ngắn.
 
 | Trục | Vị trí |
 | --- | --- |
 | Ấm ←→ Lạnh | Rất ấm |
 | Mềm ←→ Sắc | Mềm, vẫn có cấu trúc |
-| Học thuật ←→ Casual | Học thuật nhẹ, không formal |
+| Formal ←→ Casual | Thanh lịch nhẹ, không suit |
 | Playful ←→ Nghiêm | 15% playful (lá, float), 85% điềm |
 | Dense ←→ Airy | Airy |
 
-## Dấu hiệu nhận diện
+## Dấu hiệu nhận diện (bộ tối thiểu)
 
-Bộ nhận diện tối thiểu xuất hiện trên login, sidebar, mobile header:
+Xuất hiện header, sidebar, trang chào:
 
-1. **Ô icon** — hình vuông bo lớn (`rounded-2xl` hoặc `rounded-3xl`), nền `sage-soft`, icon Lucide `FileText` hoặc `BookOpen` màu `primary`.
-2. **Wordmark** — `font-display` (Fraunces), semibold, `text-ink-900`, không letter-spacing rộng.
-3. **Tagline** — Nunito `text-xs` `text-muted-foreground`.
+1. **Ô icon** — vuông bo lớn, nền `sage-soft`, glyph `text-primary`.
+2. **Wordmark** — `font-display` (Fraunces), semibold, `text-ink-900`.
+3. **Tagline** — Nunito `text-xs` `text-muted-foreground` (có thể ẩn trên mobile).
 
-Không vẽ logo phức tạp, không wordmark gradient, không icon 3D.
+Không logo 3D, không wordmark gradient, không wordmark nhiều màu.
 
 Kích thước ô icon:
 
-| Ngữ cảnh | Ô | Icon |
-| --- | --- | --- |
-| Mobile header | 32×32 (`h-8 w-8`), `rounded-xl` | 16px |
-| Sidebar | 40×40 (`h-10 w-10`), `rounded-2xl` | 20px |
-| Login hero | 64×64 (`h-16 w-16`), `rounded-3xl` | 32px |
+| Ngữ cảnh | Ô | Bo | Icon |
+| --- | --- | --- | --- |
+| Header mobile / compact | 32×32 (`h-8 w-8`) | `rounded-xl` | 16px |
+| Sidebar / header desktop | 40×40 (`h-10 w-10`) | `rounded-2xl` | 20px |
+| Auth / hero chào | 64×64 (`h-16 w-16`) | `rounded-3xl` | 32px |
 
-Login được phép `animate-float` nhẹ trên ô icon. Sidebar/header **không** float liên tục.
+Auth/hero được phép `animate-float` trên ô icon. Header/sidebar **không** float liên tục.
 
 ## Theme color & favicon
 
-- `theme-color`: `#f7f1e8` (`cream-100` / `background`) — thanh trình duyệt mobile ấm, khớp nền.
-- Favicon: SVG tối giản, cùng họ màu sage trên kem. Không đổi sang đen/trắng tương phản cao nếu chưa redesign bộ nhận diện.
+- `theme-color` / thanh trình duyệt: `#f7f1e8` (`background`).
+- Favicon: SVG tối giản, sage trên kem (hoặc glyph 1 màu primary). Không invert đen-trắng lạnh nếu vẫn theo hệ này.
 
-## Bề mặt thương hiệu: “tờ giấy ấm”
+## Bề mặt: tờ giấy ấm
 
-Toàn app nằm trên một **tấm kem cố định** với ba vệt radial rất nhạt (sage trái, peach phải, sky đáy). Đây là “không khí” của brand — không phải illustration.
+Mọi trang nằm trên **tấm kem cố định** với ba vệt radial rất nhạt. Đây là không khí hệ — không phải illustration sản phẩm.
 
 ```
 radial sage  25% opacity  → góc trên-trái
@@ -62,23 +61,27 @@ radial sky   15% opacity  → đáy giữa
 background-attachment: fixed
 ```
 
-Login tăng cường bằng ba blob `blur-3xl` (sage / peach / sky). Các trang trong app **không** thêm blob mới — chỉ hưởng nền global.
+Công thức CSS: [12-tokens.md](./12-tokens.md).
 
-## Giọng thương hiệu (tóm tắt)
+Trang auth được thêm ba blob `blur-3xl` (sage / peach / sky). Trang trong ứng dụng **không** thêm blob mới.
 
-Chi tiết copy xem [10-voice.md](./10-voice.md).
+## Giọng (tóm tắt)
 
-- Xưng “bạn”. Chào theo giờ: “Chào buổi sáng / chiều / tối”.
-- Động từ ngắn, không tiếng Anh không cần thiết. Ngoại lệ: tên mục nav đã ổn định (`Today`, `Planner`, `Tasks`…) có thể giữ song ngữ nhẹ vì đã quen trong product.
+Chi tiết: [10-voice.md](./10-voice.md).
+
+- Xưng “bạn” (hoặc trung tính nếu website B2B — vẫn ngắn, ấm, không hối).
 - Thành công: ấm, không reo hò. Lỗi: chỉ đường sửa, không đổ lỗi.
+- Tên mục nav: nhất quán trong *website đó*; guide này không áp đặt nhãn.
 
 ## Ảnh & illustration
 
-Hiện tại **không dùng ảnh stock, không dùng illustration phức tạp**. Điểm nhấn thị giác:
+Mặc định **không** ảnh stock, không illustration phức tạp. Điểm nhấn:
 
-- Gradient blob (login)
+- Radial / blob pastel
 - Icon Lucide trong ô sage-soft
-- Emoji tiết chế ở empty state (🍃)
-- Màu subject token (8 pastel)
+- Emoji tiết chế ở empty (🍃)
+- 8 pastel phân loại (chip, category)
 
-Nếu sau này thêm illustration: line art ấm, nét tròn, không outline đen dày, nền trong suốt, cùng palette. Không 3D render, không anime, không isometric phức tạp.
+Nếu thêm illustration: line art ấm, nét tròn, không outline đen dày, nền trong suốt, cùng palette. Không 3D, không anime, không isometric phức tạp.
+
+Ảnh chụp (nếu website cần): saturation thấp, ánh sáng ấm, bo `rounded-2xl`, không viền đen. Không phủ overlay xanh lạnh.

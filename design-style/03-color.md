@@ -1,8 +1,6 @@
 # 03 — Màu sắc
 
-Màu StudyOS là **kem + mực nâu + sage**, điểm pastel thấp bão hoà. Mọi màu UI phải lấy từ token, không tự pha hex lạnh (blue-600, zinc, slate).
-
-Nguồn: `@theme` trong `src/index.css`.
+Màu Giấy ấm: **kem + mực nâu + sage**, điểm pastel thấp bão hoà. Mọi màu UI lấy từ token — không tự pha hex lạnh (`blue-600`, `zinc`, `slate`).
 
 ## Vai trò (semantic)
 
@@ -19,167 +17,128 @@ Dùng semantic trước. Chỉ xuống raw token khi semantic không đủ.
 | `primary-foreground` | `#fffbf6` | Chữ trên nút primary |
 | `secondary` | `#efe4d4` | Nút phụ, track, hover nền, tab list |
 | `secondary-foreground` | `#3a3129` | Chữ trên secondary |
-| `muted` | `#efe4d4` | Nền phụ (trùng secondary — cố ý, cùng họ kem) |
+| `muted` | `#efe4d4` | Nền phụ (trùng secondary — cố ý) |
 | `muted-foreground` | `#7a6b5d` | Caption, meta, nav inactive |
-| `accent` | `#f0c4a8` | Điểm nhấn ấm (peach) — dùng sparingly |
+| `accent` | `#f0c4a8` | Điểm nhấn ấm (peach) — sparingly |
 | `accent-foreground` | `#3a3129` | Chữ trên accent |
-| `destructive` | `#c45c5c` | Xoá, lỗi thật sự |
+| `destructive` | `#c45c5c` | Xoá, lỗi chặn luồng |
 | `destructive-foreground` | `#fffbf6` | Chữ trên destructive |
-| `border` / `input` | `#e2d0b8` | Viền, input border |
-| `ring` | `#6b8f71` | Focus ring (trùng primary) |
+| `border` / `input` | `#e2d0b8` | Viền, input |
+| `ring` | `#6b8f71` | Focus ring (= primary) |
 
-**Quy tắc:** chữ luôn ink/muted trên kem. Không đặt `foreground` đen thuần `#000`. Không đặt nền `#fff` lạnh — card là `#fffbf6` (trắng ngà).
+Chữ luôn ink/muted trên kem. Không `#000`. Không nền `#fff` lạnh — card là `#fffbf6` (trắng ngà).
 
 ## Nền kem (cream)
 
-Thang giấy:
-
 | Token | Hex | Dùng khi |
 | --- | --- | --- |
-| `cream-50` | `#fbf8f3` | Lớp trong cùng, ô task trong planner, row nhạt |
-| `cream-100` | `#f7f1e8` | Nền app (= `background`) |
+| `cream-50` | `#fbf8f3` | Lớp trong cùng, row nhạt, ô lồng |
+| `cream-100` | `#f7f1e8` | Nền trang (= `background`) |
 | `cream-200` | `#efe4d4` | Secondary / muted / hover |
-| `cream-300` | `#e2d0b8` | Border, hover đậm hơn (`hover:bg-cream-300`) |
+| `cream-300` | `#e2d0b8` | Border, hover đậm (`hover:bg-cream-300`) |
 
-Cream không dùng làm chữ. Contrast chữ nằm ở ink.
+Cream không dùng làm chữ.
 
 ## Mực (ink)
 
-Thang chữ ấm — hơi nâu, không charcoal lạnh.
-
 | Token | Hex | Dùng khi |
 | --- | --- | --- |
-| `ink-700` | `#4a3f35` | Chữ phụ đậm hơn muted, overlay dialog (`ink-900/30`) |
-| `ink-800` | `#3a3129` | Label, chữ trên pastel soft, secondary-foreground |
-| `ink-900` | `#2c251f` | Tiêu đề, chữ chính (= `foreground`) |
+| `ink-700` | `#4a3f35` | Overlay (`ink-900/30`), chữ phụ đậm hơn muted |
+| `ink-800` | `#3a3129` | Label, chữ trên pastel soft |
+| `ink-900` | `#2c251f` | Tiêu đề, chữ chính |
 
-Không dùng `text-black`, `text-zinc-*`, `text-slate-*`.
+Không `text-black`, `text-zinc-*`, `text-slate-*`.
 
 ## Primary sage
 
-Sage là **màu hành động và sức sống nhẹ** — cây, tiến bộ, “được rồi”.
+Sage = hành động và sức sống nhẹ.
 
 | Token | Hex | Dùng |
 | --- | --- | --- |
 | `sage` | `#a8c5a0` | Tint, blob, hover `sage/40` |
 | `sage-soft` | `#d8e8d3` | Nav active, badge success, ô icon brand, nút `soft` |
-| `primary` | `#6b8f71` | Nút chính, icon brand, progress fill, chart bar |
+| `primary` | `#6b8f71` | Nút chính, icon brand, progress, chart |
 
-`primary` **đậm hơn** `sage` để chữ kem trên nút đọc được. Đừng dùng `sage` làm nền nút CTA (contrast yếu).
+`primary` đậm hơn `sage` để chữ kem đọc được. Đừng dùng `sage` làm nền CTA.
 
-## Pastel điểm (accent family)
+## Pastel điểm (phân loại)
 
-Tám cặp màu — mỗi cái có bản đặc và bản *soft* (nền chip). Đây là **hệ phân loại**, không phải hệ CTA.
+Tám cặp — bản đặc + bản `-soft`. Đây là **hệ category**, không phải hệ CTA. Website đích map vào thẻ, danh mục, trạng thái của *mình*.
 
-| Tên | Đặc | Soft | Cảm giác | Việc nên dùng |
+| Tên | Đặc | Soft | Cảm giác | Gợi ý dùng generic |
 | --- | --- | --- | --- | --- |
-| Sage | `#a8c5a0` | `#d8e8d3` | Ổn định, xong việc | Success, mastered, brand |
-| Sky | `#9ec4d8` | `#d5e8f2` | Tĩnh, đang học | Topic `learning`, stat phụ |
-| Lavender | `#c4b5d8` | `#ebe4f4` | Mềm, phụ | Môn học, phân loại trung tính |
-| Peach | `#f0c4a8` | `#f9e6d8` | Ấm, gần hạn | Countdown exam, khối profile sidebar, tip |
-| Rose | `#e8b4b8` | `#f6e0e2` | Cần chú ý | Overdue, needs_review, danger nhẹ |
-| Mint | `#a8d4c4` | `#d8efe6` | Tươi, phụ | Môn học, không dùng thay sage |
-| Butter | `#ead89a` | `#f6efd0` | Nhắc nhẹ | Warning, streak, reminder chip, practicing |
-| Coral | `#e8a090` | `#f6ddd6` | Quá tải | Planner overload, không dùng thay destructive |
+| Sage | `#a8c5a0` | `#d8e8d3` | Ổn định, xong | Success, hoàn tất, brand |
+| Sky | `#9ec4d8` | `#d5e8f2` | Tĩnh, thông tin | Info, đang xử lý, stat phụ |
+| Lavender | `#c4b5d8` | `#ebe4f4` | Mềm, trung tính | Danh mục phụ |
+| Peach | `#f0c4a8` | `#f9e6d8` | Ấm, gần | Tip, profile, nhấn thời hạn nhẹ |
+| Rose | `#e8b4b8` | `#f6e0e2` | Cần chú ý | Cảnh báo nhẹ, lỗi chưa phá huỷ |
+| Mint | `#a8d4c4` | `#d8efe6` | Tươi | Danh mục; không thay sage |
+| Butter | `#ead89a` | `#f6efd0` | Nhắc nhẹ | Warning, pending, banner nhắc |
+| Coral | `#e8a090` | `#f6ddd6` | Quá ngưỡng | Overload, quota; không thay destructive |
 
-### Cách dùng pastel cho đúng
+### Cách dùng
 
-- **Nền chip / badge / subject tag:** luôn bản `-soft` + chữ `ink-800` (hoặc `primary` / `destructive` khi semantic).
-- **Viền chip:** màu đặc `/40` (ví dụ `border-sage/40`) — đủ để phân biệt, không kẹo.
-- **Khối nhấn trang:** `-soft` với opacity `40–60%` trên card (`bg-peach-soft/40`, `bg-sage-soft/40`).
-- **Không** phủ full-page bằng pastel.
-- **Không** dùng quá 2–3 pastel trên cùng một card.
-- **Không** đặt chữ trắng trên pastel soft.
+- Chip / tag: `-soft` + chữ `ink-800` (+ viền đặc `/40`).
+- Khối nhấn: `-soft` opacity `40–60%` trên card.
+- Không phủ full-page pastel.
+- Không quá 2–3 pastel trên một card.
+- Không chữ trắng trên pastel soft.
+- Không để user tự nhập hex category — xoay 8 token.
 
-## Bảng semantic mở rộng (lớp chỉn chu)
-
-Code hiện có badge `success | warn | danger`. Khi thiết kế state mới, map như sau:
-
-| Ý nghĩa | Nền | Chữ | Ví dụ |
-| --- | --- | --- | --- |
-| Success / synced / mastered | `sage-soft` | `primary` | Badge success, sync “Đã đồng bộ” |
-| Info / đang học | `sky-soft` | `ink-800` | Topic learning, stat phụ Today |
-| Warning / pending / streak | `butter-soft` | `ink-800` | Badge warn, reminder host |
-| Danger nhẹ / overdue / review | `rose-soft` | `destructive` | Badge danger, task quá hạn |
-| Danger hành động (xoá) | `destructive` | `primary-foreground` | Button destructive |
-| Neutral / archived | `secondary` | `muted-foreground` | Topic archived, not_started |
-
-Destructive **đậm** (`#c45c5c`) chỉ cho hành động không đảo ngược hoặc lỗi chặn luồng. Overdue trên Today dùng rose-soft — nhắc, không phạt.
-
-## Màu môn học (subject tokens)
-
-`SUBJECT_COLOR_MAP` trong `src/lib/labels.ts`:
-
-```
-sage | sky | lavender | peach | rose | mint | butter | coral
-```
-
-Class chuẩn:
+Class chip chuẩn:
 
 ```
 bg-{token}-soft text-ink-800 border-{token}/40
 ```
 
-Gán màu khi tạo môn (xoay 8 token). Không để user tự nhập hex. Không dùng primary/destructive làm màu môn.
+Hai category cạnh nhau nên khác họ. Trùng thì xoay token kế.
 
-Hai môn cạnh nhau nên khác họ màu. Nếu trùng, xoay token kế tiếp.
+## Semantic trạng thái
 
-## Topic status
+| Ý nghĩa | Nền | Chữ |
+| --- | --- | --- |
+| Success / xong / synced | `sage-soft` | `primary` |
+| Info / trung tính nổi | `sky-soft` | `ink-800` |
+| Warning / pending | `butter-soft` | `ink-800` |
+| Danger nhẹ / cần xử lý | `rose-soft` | `destructive` |
+| Danger hành động (xoá) | `destructive` | `primary-foreground` |
+| Neutral / lưu trữ / idle | `secondary` | `muted-foreground` |
 
-| Status | Nền + chữ |
-| --- | --- |
-| `not_started` | `bg-muted text-muted-foreground` |
-| `learning` | `bg-sky-soft text-ink-800` |
-| `practicing` | `bg-butter-soft text-ink-800` |
-| `needs_review` | `bg-rose-soft text-destructive` |
-| `mastered` | `bg-sage-soft text-primary` |
-| `archived` | `bg-secondary text-muted-foreground` |
+Destructive đậm chỉ cho hành động không đảo ngược hoặc lỗi chặn luồng. Nhắc nhở trên list dùng rose-soft — không phạt.
 
 ## Overlay & trong suốt
 
 | Dùng | Giá trị |
 | --- | --- |
-| Dialog overlay | `bg-ink-900/30` + `backdrop-blur-[2px]` — mờ ấm, không đen 70% |
+| Dialog overlay | `bg-ink-900/30` + `backdrop-blur-[2px]` |
 | Sidebar | `bg-card/70 backdrop-blur-sm` |
-| Mobile header | `bg-background/80 backdrop-blur-md` |
+| Header sticky | `bg-background/80 backdrop-blur-md` |
 | Bottom nav | `bg-card/95 backdrop-blur-md` |
-| Login card | `bg-card/90 backdrop-blur-sm` |
-| Viền nhẹ trên kem | `border-border/50` tới `/70` — full `border` hơi nặng trên nền ấm |
+| Auth card | `bg-card/90 backdrop-blur-sm` |
+| Viền trên kem | `border-border/50`–`/70` |
 
-## Chart (Analytics)
+## Chart
 
-- Grid: `stroke="#e2d0b8"` (`border` / `cream-300`), dash `3 3`.
-- Bar: `fill="#6b8f71"` (`primary`), `radius={[8, 8, 0, 0]}`.
-- Tick: 11px, ink/muted — không xám Recharts mặc định nếu có thể set.
-- Một series = primary. Series 2 (nếu thêm) = `sky`. Series 3 = `peach`. Không rainbow.
+- Grid: `#e2d0b8`, dash `3 3`.
+- Series 1: `#6b8f71` (primary), bar bo trên `8px`.
+- Series 2: `#9ec4d8` (sky). Series 3: `#f0c4a8` (peach). Không rainbow.
+- Tick ~11px, ink/muted.
+- Tooltip: card + border + `shadow-lift`, chữ ink.
 
-Tooltip chart nên ăn card + border + shadow-lift, chữ ink — không nền trắng CSS mặc định nếu custom được.
+## Tương phản
 
-## Tương phản (tóm tắt)
+**Đạt:** `ink-900` trên cream/card; `ink-800` trên `*-soft`; kem trên `primary` / `destructive`; muted chỉ cho meta.
 
-Cặp **đạt** để body text:
-
-- `ink-900` trên `background` / `card` / cream
-- `ink-800` trên mọi `*-soft`
-- `primary-foreground` trên `primary` và `destructive`
-- `muted-foreground` trên cream — chỉ cho meta, không cho body dài
-
-Cặp **tránh**:
-
-- `muted-foreground` trên peach-soft/sage-soft (hơi yếu)
-- `sage` (nhạt) làm nền nút + chữ kem
-- `primary` chữ trên `sage-soft` thì được; `primary` chữ trên `background` được cho link/nhãn — không cho đoạn văn dài
-
-Chi tiết a11y: [11-accessibility.md](./11-accessibility.md).
+**Tránh:** muted dài trên peach-soft; `sage` nhạt + chữ kem làm nút; `primary` cho đoạn văn dài.
 
 ## Gradient cho phép
 
-1. **Nền body** — 3 radial, đã định nghĩa global. Không nhân bản.
-2. **Login blobs** — 3 vòng pastel blur.
-3. **Focus Session card** — `bg-gradient-to-b from-sage-soft/80 to-card`. Đây là màn hình “nghi lễ”, được phép đặc biệt.
+1. Nền body — 3 radial global. Không nhân bản.
+2. Auth blobs — 3 vòng pastel blur.
+3. Màn hình “tập trung / nghi lễ” (timer, checkout yên, đọc không nhiễu): `bg-gradient-to-b from-sage-soft/80 to-card`. Tối đa một loại này mỗi flow.
 
-Cấm: gradient nút, gradient chữ, mesh phức tạp, dark-to-light lạnh.
+Cấm: gradient nút, gradient chữ, mesh phức tạp.
 
 ## Dark mode
 
-**Không có dark mode.** Palette được thiết kế cho giấy sáng. Đừng thêm `dark:` cho đến khi có quyết định brand riêng (và phải thiết kế lại ink/cream, không đảo ngược máy móc).
+**Không có.** Palette thiết kế cho giấy sáng. Đừng đảo `dark:` máy móc. Nếu website bắt buộc dark, đó là hệ khác — thiết kế lại ink/cream, không invert.

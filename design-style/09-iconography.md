@@ -1,74 +1,68 @@
 # 09 — Iconography
 
-Chỉ **Lucide React**. Config: `"iconLibrary": "lucide"` trong `components.json`. Không Font Awesome, không Heroicons, không SVG illustration tuỳ hứng trừ logo Google trên login (brand mark bắt buộc).
+Ưu tiên **Lucide** (outline, stroke 2). SVG 1 màu cùng quy tắc size/màu cũng được. Không Font Awesome nhiều màu, không icon 3D, không bộ icon thứ hai trên cùng một website.
+
+Ngoại lệ: logo nhà cung cấp OAuth (Google, v.v.) giữ màu gốc.
 
 ## Kích thước
 
-| Token | px | Ngữ cảnh |
+| Size | px | Ngữ cảnh |
 | --- | --- | --- |
-| `h-3.5 w-3.5` | 14 | Icon trong badge (flame streak) |
-| `h-4 w-4` | 16 | **Mặc định** nút, nav desktop, dialog close, select chevron |
-| `h-5 w-5` | 20 | Mobile nav, Help feature, login Google, sidebar brand |
-| `h-6 w-6` | 24 | More tiles, FAB plus, session play/pause nếu lg |
-| `h-8 w-8` | 32 | Login wordmark icon |
+| `h-3.5 w-3.5` | 14 | Trong badge |
+| `h-4 w-4` | 16 | **Mặc định** — nút, nav desktop, close, chevron |
+| `h-5 w-5` | 20 | Nav mobile, brand compact, OAuth |
+| `h-6 w-6` | 24 | Tile tray, FAB, nút lg |
+| `h-8 w-8` | 32 | Auth wordmark |
 
-Nút đã ép `[&_svg]:size-4`. Đừng override trừ size `lg` cần 20px.
+Nút mặc định: SVG 16px. Nút `lg` có thể 20px.
 
-Stroke: mặc định Lucide (2px). Không `strokeWidth={1}` quá mảnh trên kem, không `strokeWidth={2.5}` đậm. Màu kế thừa `currentColor`.
+Stroke 2. Không `1` (mảnh trên kem), không `2.5`. Màu = `currentColor`.
 
 ## Màu
 
 | Ngữ cảnh | Màu |
 | --- | --- |
-| Trong nút | `currentColor` (foreground của variant) |
-| Nav inactive | `muted-foreground` (cùng chữ) |
-| Nav / More / Help accent | `text-primary` |
+| Trong nút | `currentColor` |
+| Nav inactive | `muted-foreground` |
+| Nav active / tile / nhấn | `text-primary` |
 | Brand mark trong ô sage-soft | `text-primary` |
-| Destructive button | kem (`primary-foreground`) |
+| Destructive | kem (`primary-foreground`) |
 
-Không tô 8 màu pastel cho 8 icon trên cùng thanh nav.
+Không tô 8 pastel cho 8 icon trên một thanh nav.
 
-## Bộ icon sản phẩm (ổn định)
+## Vai trò generic (map icon theo *website đích*)
 
-Giữ map này để não bộ user không phải học lại:
+Giữ **ổn định trong một sản phẩm**. Đổi nhãn — đừng đổi icon mỗi sprint.
 
-| Mục | Icon |
+| Vai trò | Gợi ý Lucide |
 | --- | --- |
-| Today | `LayoutDashboard` |
-| Planner | `CalendarDays` |
-| Tasks | `CheckSquare` |
-| Subjects | `BookOpen` |
-| Review | `RefreshCw` |
-| Exams | `ClipboardList` |
-| Error Log | `AlertCircle` |
-| Analytics | `ChartColumn` |
-| Documents | `FolderOpen` |
-| Help | `CircleHelp` |
-| Settings | `Settings` |
-| More | `MoreHorizontal` |
-| Add / Quick Add | `Plus` |
-| Brand mark | `FileText` (shell) / `BookOpen` (login) |
-| Session start | `Play` |
-| Pause / Stop | `Pause` / `Square` |
-| Streak | `Flame` |
-| AI | `Sparkles` |
-| Reminder | `Bell` |
-| Overdue / alert nhẹ | `AlertTriangle` / `CalendarClock` |
-| Close | `X` |
+| Tổng quan / home | `LayoutDashboard` hoặc `House` |
+| Lịch | `CalendarDays` |
+| Danh sách việc | `CheckSquare` |
+| Thư mục / tài liệu | `FolderOpen` / `FileText` |
+| Biểu đồ | `ChartColumn` |
+| Trợ giúp | `CircleHelp` |
+| Cài đặt | `Settings` |
+| Thêm / overflow | `MoreHorizontal` |
+| Tạo mới | `Plus` |
+| Brand mark | một glyph (ổn định) trong ô sage-soft |
+| Phát / tạm / dừng | `Play` / `Pause` / `Square` |
+| Nhắc | `Bell` |
+| Cảnh báo nhẹ | `AlertTriangle` |
+| Đóng | `X` |
 | Loading | `Loader2` + `animate-spin` |
+| Gợi ý / AI | `Sparkles` |
 
-Đừng đổi Today sang `Sun` hay Tasks sang `ListTodo` chỉ vì “hay hơn”. Nhận diện > mới.
-
-Hai brand mark (`FileText` vs `BookOpen`) chấp nhận được: shell = sổ, login = sách. Khi unify, ưu tiên `BookOpen` + ô sage-soft.
+Chọn một brand mark và dùng xuyên header + auth.
 
 ## Quy tắc
 
-- Icon **trang trí** (empty 🍃, sparkles help): `aria-hidden`.
-- Icon **là nút** không chữ: `aria-label` tiếng Việt (`"Thêm task"`, `"Đóng"`, `"Tạm dừng"`).
-- Không icon + emoji cùng một CTA.
-- Không icon filled và outline lẫn trong một hàng — Lucide default outline.
-- Chevron select `opacity-60` — phụ, không cạnh tranh với value.
+- Trang trí (🍃, sparkles): `aria-hidden`.
+- Nút chỉ icon: `aria-label` ngôn ngữ website.
+- Không icon + emoji cùng CTA.
+- Outline đồng bộ — không mix filled.
+- Chevron phụ: `opacity-60`.
 
 ## Emoji
 
-Cho phép **một** emoji empty state (🍃). Streak dùng icon Flame, không 🔥. Không emoji trong nav, không emoji trong H1.
+Cho phép **một** ở empty (🍃). Không emoji trong nav hay H1. Trạng thái dùng icon/badge, không 🔥💯.
